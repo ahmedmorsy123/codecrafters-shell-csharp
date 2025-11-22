@@ -97,7 +97,6 @@ public class CommandExecutor
             return false;
         }
 
-
         try
         {
             var processInfo = new System.Diagnostics.ProcessStartInfo
@@ -129,50 +128,60 @@ public class CommandExecutor
 
             process.WaitForExit();
 
-            // Handle stdout
-            if (!string.IsNullOrEmpty(output))
+            // Handle stdout redirection
+            if (command.Redirection.HasStdoutRedirection)
             {
-                output = output.Replace(executablePath, command.CommandName);
-                
-                if (command.Redirection.HasStdoutRedirection)
+                // Ensure parent directory exists
+                string? directory = Path.GetDirectoryName(command.Redirection.StdoutFile);
+                if (directory != null && !Directory.Exists(directory))
                 {
-                    // Redirect to file
-                    if (command.Redirection.StdoutAppend)
-                    {
-                        File.AppendAllText(command.Redirection.StdoutFile!, output);
-                    }
-                    else
-                    {
-                        File.WriteAllText(command.Redirection.StdoutFile!, output);
-                    }
+                    Directory.CreateDirectory(directory);
+                }
+
+                // Replace path in output
+                output = output.Replace(executablePath, command.CommandName);
+
+                // Always create/write to file, even if output is empty
+                if (command.Redirection.StdoutAppend)
+                {
+                    File.AppendAllText(command.Redirection.StdoutFile!, output);
                 }
                 else
                 {
-                    // Print to console
-                    Console.Write(output);
+                    File.WriteAllText(command.Redirection.StdoutFile!, output);
                 }
             }
-
-            // Handle stderr
-            if (!string.IsNullOrEmpty(error))
+            else if (!string.IsNullOrEmpty(output))
             {
-                if (command.Redirection.HasStderrRedirection)
+                // No redirection - print to console only if not empty
+                output = output.Replace(executablePath, command.CommandName);
+                Console.Write(output);
+            }
+
+            // Handle stderr redirection
+            if (command.Redirection.HasStderrRedirection)
+            {
+                // Ensure parent directory exists
+                string? directory = Path.GetDirectoryName(command.Redirection.StderrFile);
+                if (directory != null && !Directory.Exists(directory))
                 {
-                    // Redirect to file
-                    if (command.Redirection.StderrAppend)
-                    {
-                        File.AppendAllText(command.Redirection.StderrFile!, error);
-                    }
-                    else
-                    {
-                        File.WriteAllText(command.Redirection.StderrFile!, error);
-                    }
+                    Directory.CreateDirectory(directory);
+                }
+
+                // Always create/write to file, even if error is empty
+                if (command.Redirection.StderrAppend)
+                {
+                    File.AppendAllText(command.Redirection.StderrFile!, error);
                 }
                 else
                 {
-                    // Print to console
-                    Console.Error.Write(error);
+                    File.WriteAllText(command.Redirection.StderrFile!, error);
                 }
+            }
+            else if (!string.IsNullOrEmpty(error))
+            {
+                // No redirection - print to console only if not empty
+                Console.Error.Write(error);
             }
 
             return true;
