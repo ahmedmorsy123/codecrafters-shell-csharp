@@ -58,12 +58,25 @@ public class CommandExecutor
     }
 
     /// <summary>
+    /// Gets all registered builtin command names
+    /// </summary>
+    /// <returns>List of command names</returns>
+    public static IEnumerable<string> GetBuiltinCommands()
+    {
+        return _commands.Keys;
+    }
+
+    /// <summary>
     /// Executes the given command
     /// </summary>
     /// <param name="command">The parsed command to execute</param>
     /// <returns>True if the shell should continue, false otherwise</returns>
     public bool Execute(Command command)
     {
+        if (string.IsNullOrWhiteSpace(command.CommandName))
+        {
+            return true;
+        }
         // Check if it's a built-in command
         if (_commands.TryGetValue(command.CommandName, out ICommand? commandInstance))
         {

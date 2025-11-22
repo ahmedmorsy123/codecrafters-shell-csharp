@@ -8,7 +8,7 @@ public class CommandParser
         
         if (string.IsNullOrWhiteSpace(commandLine))
         {
-            throw new ArgumentException("Command line cannot be empty");
+            return new Command("", new string[0]);
         }
 
         List<string> parts = new List<string>();
