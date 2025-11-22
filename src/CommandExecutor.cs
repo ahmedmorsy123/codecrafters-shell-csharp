@@ -98,17 +98,12 @@ public class CommandExecutor
             var processInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = executablePath,
+                Arguments = string.Join(" ", command.Args),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
-
-
-            foreach (var arg in command.Args)
-            {
-                processInfo.ArgumentList.Add(arg);
-            }
 
             using var process = System.Diagnostics.Process.Start(processInfo);
             
@@ -126,6 +121,7 @@ public class CommandExecutor
             // Print output
             if (!string.IsNullOrEmpty(output))
             {
+                output.Replace(executablePath, command.CommandName);
                 Console.Write(output);
             }
 
