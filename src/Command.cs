@@ -6,11 +6,6 @@ public class Command
 
     public Command(string commandName, string[] args, RedirectionInfo? redirection = null)
     {
-        if (string.IsNullOrWhiteSpace(commandName))
-        {
-            throw new ArgumentException("Command name cannot be null or empty", nameof(commandName));
-        }
-
         _commandName = commandName;
         _args = new List<string>(args ?? Array.Empty<string>());
         _redirection = redirection ?? new RedirectionInfo();

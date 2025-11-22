@@ -10,7 +10,7 @@ class Program
             {
                 Console.Write("$ ");
             
-                string commandLine = Console.ReadLine()!; 
+                string commandLine = InputReader.ReadLine(); 
                 Command command = CommandParser.Parse(commandLine);
                 
                 // Execute the command and check if we should continue
