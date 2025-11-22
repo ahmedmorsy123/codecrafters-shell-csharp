@@ -111,10 +111,66 @@ public class CommandParser
             throw new ArgumentException("No command found");
         }
 
-        // First part is the command name (can be quoted), rest are arguments
-        string commandName = parts[0];
-        string[] commandArgs = parts.Skip(1).ToArray();
+        // Parse redirections from the parts
+        RedirectionInfo redirection = new RedirectionInfo();
+        List<string> filteredParts = new List<string>();
 
-        return new Command(commandName, commandArgs);
+        for (int i = 0; i < parts.Count; i++)
+        {
+            string part = parts[i];
+
+            // Check for redirection operators
+            if (part == ">" || part == "1>")
+            {
+                // Stdout redirection (overwrite)
+                if (i + 1 < parts.Count)
+                {
+                    redirection.StdoutFile = parts[i + 1];
+                    redirection.StdoutAppend = false;
+                    i++; // Skip the next part (the filename)
+                }
+            }
+            else if (part == "2>")
+            {
+                // Stderr redirection (overwrite)
+                if (i + 1 < parts.Count)
+                {
+                    redirection.StderrFile = parts[i + 1];
+                    redirection.StderrAppend = false;
+                    i++; // Skip the next part (the filename)
+                }
+            }
+            else if (part == ">>" || part == "1>>")
+            {
+                // Stdout redirection (append)
+                if (i + 1 < parts.Count)
+                {
+                    redirection.StdoutFile = parts[i + 1];
+                    redirection.StdoutAppend = true;
+                    i++; // Skip the next part (the filename)
+                }
+            }
+            else if (part == "2>>")
+            {
+                // Stderr redirection (append)
+                if (i + 1 < parts.Count)
+                {
+                    redirection.StderrFile = parts[i + 1];
+                    redirection.StderrAppend = true;
+                    i++; // Skip the next part (the filename)
+                }
+            }
+            else
+            {
+                // Regular argument
+                filteredParts.Add(part);
+            }
+        }
+
+        // First part is the command name (can be quoted), rest are arguments
+        string commandName = filteredParts[0];
+        string[] commandArgs = filteredParts.Skip(1).ToArray();
+
+        return new Command(commandName, commandArgs, redirection);
     }
 }

@@ -67,7 +67,11 @@ public class CommandExecutor
         // Check if it's a built-in command
         if (_commands.TryGetValue(command.CommandName, out ICommand? commandInstance))
         {
-            return commandInstance.Execute(command.Args);
+            // Use output redirector for built-in commands
+            using (var redirector = new OutputRedirector(command.Redirection))
+            {
+                return commandInstance.Execute(command.Args);
+            }
         }
 
         // Try to find and execute as external command
@@ -92,6 +96,7 @@ public class CommandExecutor
         {
             return false;
         }
+
 
         try
         {
@@ -124,17 +129,50 @@ public class CommandExecutor
 
             process.WaitForExit();
 
-            // Print output
+            // Handle stdout
             if (!string.IsNullOrEmpty(output))
             {
                 output = output.Replace(executablePath, command.CommandName);
-                Console.Write(output);
+                
+                if (command.Redirection.HasStdoutRedirection)
+                {
+                    // Redirect to file
+                    if (command.Redirection.StdoutAppend)
+                    {
+                        File.AppendAllText(command.Redirection.StdoutFile!, output);
+                    }
+                    else
+                    {
+                        File.WriteAllText(command.Redirection.StdoutFile!, output);
+                    }
+                }
+                else
+                {
+                    // Print to console
+                    Console.Write(output);
+                }
             }
 
-            // Print errors
+            // Handle stderr
             if (!string.IsNullOrEmpty(error))
             {
-                Console.Error.Write(error);
+                if (command.Redirection.HasStderrRedirection)
+                {
+                    // Redirect to file
+                    if (command.Redirection.StderrAppend)
+                    {
+                        File.AppendAllText(command.Redirection.StderrFile!, error);
+                    }
+                    else
+                    {
+                        File.WriteAllText(command.Redirection.StderrFile!, error);
+                    }
+                }
+                else
+                {
+                    // Print to console
+                    Console.Error.Write(error);
+                }
             }
 
             return true;
