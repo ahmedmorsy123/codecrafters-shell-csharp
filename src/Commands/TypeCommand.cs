@@ -15,13 +15,9 @@ public class TypeCommand : ICommand
         {
             Console.WriteLine($"{commandName} is a shell builtin");
         }
-        else if (IsExecutable(commandName, out string? fullPath))
+        else if (FindExecutableInPath(commandName, out string? fullPath))
         {
-            if (fullPath != null && HasExecutePermission(fullPath))
-            {
-                Console.WriteLine($"{commandName} is {fullPath}");
-            }
-            
+            Console.WriteLine($"{commandName} is {fullPath}");
         }
         else
         {
@@ -31,7 +27,7 @@ public class TypeCommand : ICommand
         return true; // Continue running the shell
     }
 
-    private static bool IsExecutable(string executableName, out string? fullPath)
+    private static bool FindExecutableInPath(string executableName, out string? fullPath)
     {
         string? pathVariable = Environment.GetEnvironmentVariable("PATH");
         
@@ -43,16 +39,22 @@ public class TypeCommand : ICommand
         
         string[] paths = pathVariable.Split(Path.PathSeparator);
         
-        
         foreach (string path in paths)
         {
-
-            fullPath = Path.Combine(path, executableName);
-            if (File.Exists(fullPath))
+            // Skip if directory doesn't exist
+            if (!Directory.Exists(path))
             {
+                continue;
+            }
+
+            string candidatePath = Path.Combine(path, executableName);
+            
+            // Check if file exists and has execute permission
+            if (File.Exists(candidatePath) && HasExecutePermission(candidatePath))
+            {
+                fullPath = candidatePath;
                 return true;
             }
-            
         }
 
         fullPath = null;
@@ -61,7 +63,6 @@ public class TypeCommand : ICommand
 
     private static bool HasExecutePermission(string filePath)
     {
-        return true;
         try
         {
             // For Unix-like systems
