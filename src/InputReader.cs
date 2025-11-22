@@ -40,9 +40,9 @@ public class InputReader
             }
             else if (keyInfo.Key == ConsoleKey.Tab)
             {
-                // Try to autocomplete
+                // Autocomplete using Trie
                 string currentInput = input.ToString();
-                string? completion = TryAutocomplete(currentInput);
+                string? completion = CommandExecutor.GetAutocomplete(currentInput);
 
                 if (completion != null && completion != currentInput)
                 {
@@ -109,27 +109,6 @@ public class InputReader
     }
 
     /// <summary>
-    /// Attempts to autocomplete the current input with a builtin command
-    /// </summary>
-    private static string? TryAutocomplete(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return null;
-        }
-
-        // Get all builtin commands that start with the input
-        var matches = CommandExecutor.GetBuiltinCommands()
-            .Where(cmd => cmd.StartsWith(input, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(cmd => cmd)
-            .ToList();
-
-        // Return the first match if there's exactly one or multiple
-        // If multiple, return the first one (user can press Tab again for next)
-        return matches.FirstOrDefault();
-    }
-
-    /// <summary>
     /// Redraws the entire input line and positions cursor correctly
     /// </summary>
     private static void RedrawLine(string text, int cursorPosition, int startColumn)
@@ -143,29 +122,5 @@ public class InputReader
         
         // Move cursor back to the correct position
         Console.CursorLeft = startColumn + cursorPosition;
-    }
-
-    /// <summary>
-    /// Clears the current line on the console
-    /// </summary>
-    private static void ClearCurrentLine(int length, int cursorPosition)
-    {
-        // Move cursor to beginning of input
-        for (int i = 0; i < cursorPosition; i++)
-        {
-            Console.Write("\b");
-        }
-
-        // Overwrite entire line with spaces
-        for (int i = 0; i < length; i++)
-        {
-            Console.Write(" ");
-        }
-
-        // Move cursor back to beginning
-        for (int i = 0; i < length; i++)
-        {
-            Console.Write("\b");
-        }
     }
 }
