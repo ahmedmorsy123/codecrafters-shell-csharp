@@ -104,9 +104,7 @@ public class CommandExecutor
                 CreateNoWindow = true
             };
 
-            // Add command name as argv[0], then the actual arguments
-            // This ensures argv[0] is just the command name, not the full path
-            processInfo.ArgumentList.Add(command.CommandName);
+
             foreach (var arg in command.Args)
             {
                 processInfo.ArgumentList.Add(arg);
