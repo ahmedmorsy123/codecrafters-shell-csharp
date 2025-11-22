@@ -4,8 +4,8 @@ class Program
     {
         try
         {
-            var executor = new CommandExecutor();
             
+            var executor = new CommandExecutor();
             while (true)
             {
                 Console.Write("$ ");
