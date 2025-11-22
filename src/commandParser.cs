@@ -14,19 +14,25 @@ public class CommandParser
         List<string> parts = new List<string>();
         StringBuilder currentPart = new StringBuilder();
         bool inSingleQuote = false;
+        bool inDoubleQuote = false;
 
         for (int i = 0; i < commandLine.Length; i++)
         {
             char c = commandLine[i];
 
-            if (c == '\'' )
+            if (c == '\'' && !inDoubleQuote)
             {
-                // Toggle quote state, but don't include the quote character
+                // Toggle single quote state (only if not inside double quotes)
                 inSingleQuote = !inSingleQuote;
             }
-            else if (c == ' ' && !inSingleQuote)
+            else if (c == '"' && !inSingleQuote)
             {
-                // Space outside quotes - end of current part
+                // Toggle double quote state (only if not inside single quotes)
+                inDoubleQuote = !inDoubleQuote;
+            }
+            else if (c == ' ' && !inSingleQuote && !inDoubleQuote)
+            {
+                // Space outside all quotes - end of current part
                 if (currentPart.Length > 0)
                 {
                     parts.Add(currentPart.ToString());
