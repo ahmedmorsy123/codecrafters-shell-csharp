@@ -1,10 +1,9 @@
 public class CommandExecutor
 {
-    private readonly Dictionary<string, ICommand> _commands;
+    private static readonly Dictionary<string, ICommand> _commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase);
 
     public CommandExecutor()
     {
-        _commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase);
         RegisterCommands();
     }
 
@@ -46,6 +45,16 @@ public class CommandExecutor
                 _commands[attribute.Name] = commandInstance;
             }
         }
+    }
+
+    /// <summary>
+    /// Checks if a command is registered as a built-in command
+    /// </summary>
+    /// <param name="commandName">The command name to check</param>
+    /// <returns>True if the command is registered, false otherwise</returns>
+    public static bool IsCommand(string commandName)
+    {
+        return _commands.ContainsKey(commandName);
     }
 
     /// <summary>
