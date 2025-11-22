@@ -121,7 +121,7 @@ public class CommandExecutor
             // Print output
             if (!string.IsNullOrEmpty(output))
             {
-                output.Replace(executablePath, command.CommandName);
+                output = output.Replace(executablePath, command.CommandName);
                 Console.Write(output);
             }
 
