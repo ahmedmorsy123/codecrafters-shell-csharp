@@ -1,3 +1,4 @@
+[CommandName("exit")]
 public class ExitCommand : ICommand
 {
     public bool Execute(IReadOnlyList<string> args)

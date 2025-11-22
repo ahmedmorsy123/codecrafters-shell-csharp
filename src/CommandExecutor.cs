@@ -4,11 +4,48 @@ public class CommandExecutor
 
     public CommandExecutor()
     {
-        _commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase)
+        _commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase);
+        RegisterCommands();
+    }
+
+    /// <summary>
+    /// Automatically discovers and registers all commands using reflection
+    /// </summary>
+    private void RegisterCommands()
+    {
+        // Get all types in the current assembly
+        var commandTypes = typeof(CommandExecutor).Assembly.GetTypes()
+            .Where(type => typeof(ICommand).IsAssignableFrom(type) 
+                        && !type.IsInterface 
+                        && !type.IsAbstract);
+
+        foreach (var commandType in commandTypes)
         {
-            { "exit", new ExitCommand() }
-            // Add more built-in commands here as you create them
-        };
+            // Look for CommandName attributes
+            var attributes = commandType.GetCustomAttributes(typeof(CommandNameAttribute), false)
+                .Cast<CommandNameAttribute>();
+
+            if (!attributes.Any())
+            {
+                // Skip commands without the attribute
+                continue;
+            }
+
+            // Create an instance of the command
+            var commandInstance = (ICommand)Activator.CreateInstance(commandType)!;
+
+            // Register each command name from the attributes
+            foreach (var attribute in attributes)
+            {
+                if (_commands.ContainsKey(attribute.Name))
+                {
+                    Console.WriteLine($"Warning: Duplicate command name '{attribute.Name}' ignored for {commandType.Name}");
+                    continue;
+                }
+
+                _commands[attribute.Name] = commandInstance;
+            }
+        }
     }
 
     /// <summary>
