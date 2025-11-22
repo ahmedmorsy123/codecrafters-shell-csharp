@@ -121,6 +121,7 @@ public class CommandExecutor
             // Print output
             if (!string.IsNullOrEmpty(output))
             {
+                output = output.Split('/').Last();
                 Console.Write(output);
             }
 
