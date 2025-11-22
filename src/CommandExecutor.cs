@@ -98,12 +98,18 @@ public class CommandExecutor
             var processInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = executablePath,
-                Arguments = string.Join(" ", command.Args),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+
+            // Use ArgumentList to pass each argument separately
+            // This preserves arguments with spaces without needing quotes
+            foreach (var arg in command.Args)
+            {
+                processInfo.ArgumentList.Add(arg);
+            }
 
             using var process = System.Diagnostics.Process.Start(processInfo);
             
