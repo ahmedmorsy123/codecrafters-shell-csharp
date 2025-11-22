@@ -70,8 +70,130 @@ public class CommandExecutor
             return commandInstance.Execute(command.Args);
         }
 
+        // Try to find and execute as external command
+        if (TryExecuteExternal(command))
+        {
+            return true;
+        }
+
         // Command not found
         Console.WriteLine($"{command.CommandName}: command not found");
         return true; // Continue running the shell
+    }
+
+    /// <summary>
+    /// Attempts to find and execute an external command from PATH
+    /// </summary>
+    private bool TryExecuteExternal(Command command)
+    {
+        string? executablePath = FindExecutableInPath(command.CommandName);
+        
+        if (executablePath == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = executablePath,
+                Arguments = string.Join(" ", command.Args),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(processInfo);
+            
+            if (process == null)
+            {
+                return false;
+            }
+
+            // Read output and error streams
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+
+            process.WaitForExit();
+
+            // Print output
+            if (!string.IsNullOrEmpty(output))
+            {
+                Console.Write(output);
+            }
+
+            // Print errors
+            if (!string.IsNullOrEmpty(error))
+            {
+                Console.Error.Write(error);
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Finds an executable in the PATH environment variable
+    /// </summary>
+    public static string? FindExecutableInPath(string executableName)
+    {
+        string? pathVariable = Environment.GetEnvironmentVariable("PATH");
+        
+        if (pathVariable == null)
+        {
+            return null;
+        }
+        
+        string[] paths = pathVariable.Split(Path.PathSeparator);
+        
+        foreach (string path in paths)
+        {
+            // Skip if directory doesn't exist
+            if (!Directory.Exists(path))
+            {
+                continue;
+            }
+
+            string candidatePath = Path.Combine(path, executableName);
+            
+            // Check if file exists and has execute permission
+            if (File.Exists(candidatePath) && HasExecutePermission(candidatePath))
+            {
+                return candidatePath;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if a file has execute permissions
+    /// </summary>
+    public static bool HasExecutePermission(string filePath)
+    {
+        try
+        {
+            // For Unix-like systems
+            if (!OperatingSystem.IsWindows())
+            {
+                var mode = File.GetUnixFileMode(filePath);
+                return (mode & (UnixFileMode.UserExecute | 
+                            UnixFileMode.GroupExecute | 
+                            UnixFileMode.OtherExecute)) != 0;
+            }
+            
+            // For Windows - just check if file exists
+            return File.Exists(filePath);
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
