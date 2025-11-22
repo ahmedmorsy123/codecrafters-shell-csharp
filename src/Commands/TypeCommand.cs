@@ -15,11 +15,69 @@ public class TypeCommand : ICommand
         {
             Console.WriteLine($"{commandName} is a shell builtin");
         }
+        else if (IsExecutable(commandName, out string? fullPath))
+        {
+            if (fullPath != null && HasExecutePermission(fullPath))
+            {
+                Console.WriteLine($"{commandName} is {fullPath}");
+            }
+            
+        }
         else
         {
             Console.WriteLine($"{commandName}: not found");
         }
 
         return true; // Continue running the shell
+    }
+
+    private static bool IsExecutable(string executableName, out string? fullPath)
+    {
+        string? pathVariable = Environment.GetEnvironmentVariable("PATH");
+        
+        if (pathVariable == null)
+        {
+            fullPath = null;
+            return false;
+        }
+        
+        string[] paths = pathVariable.Split(Path.PathSeparator);
+        
+        
+        foreach (string path in paths)
+        {
+
+            fullPath = Path.Combine(path, executableName);
+            if (File.Exists(fullPath))
+            {
+                return true;
+            }
+            
+        }
+
+        fullPath = null;
+        return false;
+    }
+
+    private static bool HasExecutePermission(string filePath)
+    {
+        try
+        {
+            // For Unix-like systems
+            if (!OperatingSystem.IsWindows())
+            {
+                var mode = File.GetUnixFileMode(filePath);
+                return (mode & (UnixFileMode.UserExecute | 
+                            UnixFileMode.GroupExecute | 
+                            UnixFileMode.OtherExecute)) != 0;
+            }
+            
+            // For Windows - just check if file exists
+            return File.Exists(filePath);
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
