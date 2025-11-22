@@ -61,6 +61,7 @@ public class TypeCommand : ICommand
 
     private static bool HasExecutePermission(string filePath)
     {
+        return true;
         try
         {
             // For Unix-like systems
