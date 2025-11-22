@@ -98,12 +98,19 @@ public class CommandExecutor
             var processInfo = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = executablePath,
-                Arguments = string.Join(" ", command.Args),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+
+            // Add command name as argv[0], then the actual arguments
+            // This ensures argv[0] is just the command name, not the full path
+            processInfo.ArgumentList.Add(command.CommandName);
+            foreach (var arg in command.Args)
+            {
+                processInfo.ArgumentList.Add(arg);
+            }
 
             using var process = System.Diagnostics.Process.Start(processInfo);
             
