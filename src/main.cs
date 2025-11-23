@@ -5,10 +5,15 @@ class Program
         try
         {
             // For testing: add testbin directory to PATH
-            if (OperatingSystem.IsWindows())
+            string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
+            string? currentPath = Environment.GetEnvironmentVariable("PATH");
+            if (!string.IsNullOrEmpty(currentPath))
             {
-                string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
-                Environment.SetEnvironmentVariable("PATH", testBinPath + ";");
+                Environment.SetEnvironmentVariable("PATH", testBinPath + Path.PathSeparator + currentPath);
+            }
+            else
+            {
+                Environment.SetEnvironmentVariable("PATH", testBinPath);
             }
 
             var executor = new CommandExecutor();

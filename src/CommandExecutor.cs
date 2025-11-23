@@ -126,6 +126,7 @@ public class CommandExecutor
     private bool ExecutePipelineCommands(IReadOnlyList<Command> commands)
     {
         List<Process> processes = new List<Process>();
+        List<Task> pipeTasks = new List<Task>();
         Task? outputTask = null;
 
         try
@@ -149,7 +150,7 @@ public class CommandExecutor
                 else
                 {
                     // External command
-                    var result = ExecuteExternalInPipeline(cmd, isFirst, isLast, processes);
+                    var result = ExecuteExternalInPipeline(cmd, isFirst, isLast, processes, pipeTasks);
                     if (!result.success)
                     {
                         Console.WriteLine($"{cmd.CommandName}: command not found");
@@ -164,9 +165,24 @@ public class CommandExecutor
             }
 
             // Wait for output to be read (if the last command was external)
+            // This will block until all output is read from the last process
             if (outputTask != null)
             {
                 outputTask.Wait();
+            }
+
+            // Wait for all pipe tasks to complete
+            // Note: These might already be done if the processes have exited
+            if (pipeTasks.Count > 0)
+            {
+                try
+                {
+                    Task.WaitAll(pipeTasks.ToArray());
+                }
+                catch
+                {
+                    // Ignore pipe errors (e.g., broken pipe when head exits before tail)
+                }
             }
 
             // Wait for all processes to complete
@@ -242,7 +258,7 @@ public class CommandExecutor
     /// <summary>
     /// Executes an external command as part of a pipeline
     /// </summary>
-    private (bool success, Task? outputTask) ExecuteExternalInPipeline(Command cmd, bool isFirst, bool isLast, List<Process> processes)
+    private (bool success, Task? outputTask) ExecuteExternalInPipeline(Command cmd, bool isFirst, bool isLast, List<Process> processes, List<Task> pipeTasks)
     {
         string? executablePath = FindExecutableInPath(cmd.CommandName);
 
@@ -277,7 +293,7 @@ public class CommandExecutor
         {
             var previousProcess = processes[processes.Count - 1];
             // Pipe previous process stdout to current process stdin
-            Task.Run(async () =>
+            var pipeTask = Task.Run(async () =>
             {
                 try
                 {
@@ -286,9 +302,10 @@ public class CommandExecutor
                 }
                 catch
                 {
-                    // Ignore pipe errors (e.g., broken pipe)
+                    // Ignore pipe errors (e.g., broken pipe when downstream exits early)
                 }
             });
+            pipeTasks.Add(pipeTask);
         }
 
         processes.Add(process);
@@ -297,20 +314,16 @@ public class CommandExecutor
         Task? outputTask = null;
         if (isLast)
         {
-            outputTask = Task.Run(() =>
+            // Read stdout and stderr concurrently
+            var stdoutTask = Task.Run(() =>
             {
                 try
                 {
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
-
-                    if (!string.IsNullOrEmpty(output))
+                    // Read line by line to output as soon as data is available
+                    string? line;
+                    while ((line = process.StandardOutput.ReadLine()) != null)
                     {
-                        Console.Write(output);
-                    }
-                    if (!string.IsNullOrEmpty(error))
-                    {
-                        Console.Error.Write(error);
+                        Console.WriteLine(line);
                     }
                 }
                 catch
@@ -318,6 +331,25 @@ public class CommandExecutor
                     // Ignore read errors
                 }
             });
+
+            var stderrTask = Task.Run(() =>
+            {
+                try
+                {
+                    string? line;
+                    while ((line = process.StandardError.ReadLine()) != null)
+                    {
+                        Console.Error.WriteLine(line);
+                    }
+                }
+                catch
+                {
+                    // Ignore read errors
+                }
+            });
+
+            // Wait for both streams to be fully read
+            outputTask = Task.WhenAll(stdoutTask, stderrTask);
         }
 
         return (true, outputTask);
