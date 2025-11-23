@@ -11,16 +11,29 @@ public class InputReader
     public static string ReadLine()
     {
         // Check if stdin is redirected (e.g., from a pipe or file)
-        // If redirected, use simple ReadLine for compatibility with automated tests
+        // If redirected, read and echo character by character for test visibility
         if (Console.IsInputRedirected)
         {
-            string? line = Console.ReadLine();
-            if (line != null)
+            StringBuilder line = new StringBuilder();
+            int ch;
+            while ((ch = Console.Read()) != -1 && ch != '\n' && ch != '\r')
             {
-                // Echo the input so tests can see what was typed
-                Console.Write(line);
+                char c = (char)ch;
+                line.Append(c);
+                Console.Write(c); // Echo immediately so tests can see it
             }
-            return line ?? string.Empty;
+            
+            // Handle \r\n (Windows) vs \n (Unix)
+            if (ch == '\r')
+            {
+                int next = Console.Read();
+                if (next != '\n' && next != -1)
+                {
+                    // Put it back... but we can't, so just ignore
+                }
+            }
+            
+            return line.ToString();
         }
 
         // Interactive mode with autocomplete
