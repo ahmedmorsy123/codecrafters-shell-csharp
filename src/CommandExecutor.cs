@@ -156,10 +156,28 @@ public class CommandExecutor
                 }
             }
 
-            // Wait for all processes to complete
-            foreach (var process in processes)
+            // Wait only for the last process to complete
+            // When it finishes, kill any remaining processes (like tail -f)
+            if (processes.Count > 0)
             {
-                process.WaitForExit();
+                var lastProcess = processes[processes.Count - 1];
+                lastProcess.WaitForExit();
+
+                // Kill any processes still running (e.g., tail -f)
+                foreach (var process in processes)
+                {
+                    if (!process.HasExited)
+                    {
+                        try
+                        {
+                            process.Kill();
+                        }
+                        catch
+                        {
+                            // Ignore errors when killing processes
+                        }
+                    }
+                }
             }
 
             return true;
@@ -270,20 +288,30 @@ public class CommandExecutor
 
         processes.Add(process);
 
-        // If this is the last command, read and display output
+        // If this is the last command, start reading output asynchronously
         if (isLast)
         {
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
+            // Start reading stdout and stderr asynchronously
+            var outputTask = Task.Run(() =>
+            {
+                string output = process.StandardOutput.ReadToEnd();
+                if (!string.IsNullOrEmpty(output))
+                {
+                    Console.Write(output);
+                }
+            });
 
-            if (!string.IsNullOrEmpty(output))
+            var errorTask = Task.Run(() =>
             {
-                Console.Write(output);
-            }
-            if (!string.IsNullOrEmpty(error))
-            {
-                Console.Error.Write(error);
-            }
+                string error = process.StandardError.ReadToEnd();
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Console.Error.Write(error);
+                }
+            });
+
+            // Wait for both output streams to be read
+            Task.WaitAll(outputTask, errorTask);
         }
 
         return true;
