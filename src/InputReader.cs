@@ -39,8 +39,8 @@ public class InputReader
                 if (completion != null && completion != line.ToString())
                 {
                     string addedPart = completion.Substring(line.Length);
-                    line.Append(addedPart);
-                    Console.Write(addedPart);
+                    line.Append(addedPart + " ");
+                    Console.Write(addedPart + " ");
                 }
             }
             else
@@ -72,6 +72,7 @@ public class InputReader
     private static string ReadInteractiveInput()
     {
         StringBuilder line = new StringBuilder();
+        int cursorPosition = 0;
 
         while (true)
         {
@@ -84,23 +85,70 @@ public class InputReader
             }
             else if (keyInfo.Key == ConsoleKey.Tab)
             {
-                // Try to find a completion and append only the missing letters
-                string? suggestion = Autocomplete.GetSuggestion(line.ToString());
-
-                if (suggestion != null && suggestion != line.ToString())
+                // Only autocomplete when cursor is at the end
+                if (cursorPosition == line.Length)
                 {
-                    string addedPart = suggestion.Substring(line.Length);
-                    line.Append(addedPart);
-                    Console.Write(addedPart);
+                    string? suggestion = Autocomplete.GetSuggestion(line.ToString());
+
+                    if (suggestion != null && suggestion != line.ToString())
+                    {
+                        string addedPart = suggestion.Substring(line.Length);
+                        line.Append(addedPart + " ");
+                        cursorPosition = line.Length;
+                        Console.Write(addedPart + " ");
+                    }
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                if (cursorPosition > 0)
+                {
+                    line.Remove(cursorPosition - 1, 1);
+                    cursorPosition--;
+                    
+                    // Redraw from cursor to end
+                    Console.Write("\b");
+                    Console.Write(line.ToString().Substring(cursorPosition) + " ");
+                    Console.Write(new string('\b', line.Length - cursorPosition + 1));
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.Delete)
+            {
+                if (cursorPosition < line.Length)
+                {
+                    line.Remove(cursorPosition, 1);
+                    
+                    // Redraw from cursor to end
+                    Console.Write(line.ToString().Substring(cursorPosition) + " ");
+                    Console.Write(new string('\b', line.Length - cursorPosition + 1));
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.LeftArrow)
+            {
+                if (cursorPosition > 0)
+                {
+                    cursorPosition--;
+                    Console.Write("\b");
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.RightArrow)
+            {
+                if (cursorPosition < line.Length)
+                {
+                    Console.Write(line[cursorPosition]);
+                    cursorPosition++;
                 }
             }
             else if (!char.IsControl(keyInfo.KeyChar))
             {
-                // Append regular characters
-                line.Append(keyInfo.KeyChar);
-                Console.Write(keyInfo.KeyChar);
+                // Insert character at cursor position
+                line.Insert(cursorPosition, keyInfo.KeyChar);
+                cursorPosition++;
+                
+                // Redraw from cursor to end
+                Console.Write(line.ToString().Substring(cursorPosition - 1));
+                Console.Write(new string('\b', line.Length - cursorPosition));
             }
-            // Ignore all other keys (backspace, delete, arrows, etc.)
         }
     }
 }
