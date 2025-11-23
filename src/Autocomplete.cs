@@ -25,6 +25,39 @@ public static class Autocomplete
     }
 
     /// <summary>
+    /// Registers all executable files found in PATH environment variable
+    /// </summary>
+    public static void RegisterPathExecutables()
+    {
+        string? pathVariable = Environment.GetEnvironmentVariable("PATH");
+        if (string.IsNullOrEmpty(pathVariable))
+        {
+            return;
+        }
+
+        string[] paths = pathVariable.Split(Path.PathSeparator);
+
+        foreach (string path in paths)
+        {
+            if (!Directory.Exists(path))
+            {
+                continue;
+            }
+
+            string[] files = Directory.GetFiles(path);
+            foreach (string file in files)
+            {
+                string fileName = Path.GetFileName(file);
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    Register(fileName);
+                    Console.WriteLine($"Registered executable for autocomplete: {fileName}");
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Gets the first suggestion for the given prefix or null
     /// </summary>
     public static string? GetSuggestion(string prefix)
