@@ -6,6 +6,7 @@ public class CommandExecutor
     public CommandExecutor()
     {
         RegisterCommands();
+        Autocomplete.RegisterPathExecutables();
     }
 
     /// <summary>
