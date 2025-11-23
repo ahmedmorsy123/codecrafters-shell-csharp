@@ -41,6 +41,9 @@ public class InputReader
                     string addedPart = completion.Substring(line.Length);
                     line.Append(addedPart + " ");
                     Console.Write(addedPart + " ");
+                }else
+                {
+                    Console.Beep();
                 }
             }
             else
@@ -96,6 +99,9 @@ public class InputReader
                         line.Append(addedPart + " ");
                         cursorPosition = line.Length;
                         Console.Write(addedPart + " ");
+                    }else
+                    {
+                        Console.Beep();
                     }
                 }
             }
