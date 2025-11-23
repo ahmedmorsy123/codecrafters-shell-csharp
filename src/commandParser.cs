@@ -1,11 +1,96 @@
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
 
 public class CommandParser
 {
+    /// <summary>
+    /// Parses a command line that may contain pipes
+    /// </summary>
+    public static Pipeline ParsePipeline(string commandLine)
+    {
+        // Split by pipe character (|) while respecting quotes
+        List<string> segments = SplitByPipe(commandLine);
+
+        List<Command> commands = new List<Command>();
+        foreach (string segment in segments)
+        {
+            commands.Add(Parse(segment));
+        }
+
+        return new Pipeline(commands);
+    }
+
+    /// <summary>
+    /// Splits command line by pipe (|) while respecting quotes
+    /// </summary>
+    private static List<string> SplitByPipe(string commandLine)
+    {
+        List<string> segments = new List<string>();
+        StringBuilder current = new StringBuilder();
+        bool inSingleQuote = false;
+        bool inDoubleQuote = false;
+        bool escaped = false;
+
+        for (int i = 0; i < commandLine.Length; i++)
+        {
+            char c = commandLine[i];
+
+            if (escaped)
+            {
+                current.Append(c);
+                escaped = false;
+            }
+            else if (c == '\\')
+            {
+                if (inSingleQuote)
+                {
+                    current.Append(c);
+                }
+                else
+                {
+                    escaped = true;
+                    current.Append(c);
+                }
+            }
+            else if (c == '\'' && !inDoubleQuote)
+            {
+                inSingleQuote = !inSingleQuote;
+                current.Append(c);
+            }
+            else if (c == '"' && !inSingleQuote)
+            {
+                inDoubleQuote = !inDoubleQuote;
+                current.Append(c);
+            }
+            else if (c == '|' && !inSingleQuote && !inDoubleQuote)
+            {
+                // Pipe found outside quotes - this is a pipeline separator
+                segments.Add(current.ToString());
+                current.Clear();
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        // Add the last segment
+        if (current.Length > 0 || segments.Count > 0)
+        {
+            segments.Add(current.ToString());
+        }
+
+        return segments;
+    }
+
+    /// <summary>
+    /// Parses a single command (without pipes)
+    /// </summary>
     public static Command Parse(string commandLine)
     {
         commandLine = commandLine.Trim();
-        
+
         if (string.IsNullOrWhiteSpace(commandLine))
         {
             return new Command("", new string[0]);
@@ -173,4 +258,17 @@ public class CommandParser
 
         return new Command(commandName, commandArgs, redirection);
     }
+}
+
+public class Pipeline
+{
+    public IReadOnlyList<Command> Commands { get; }
+
+    public Pipeline(IEnumerable<Command> commands)
+    {
+        if (commands == null) throw new ArgumentNullException(nameof(commands));
+        Commands = new List<Command>(commands);
+    }
+
+    public bool IsSingleCommand => Commands.Count == 1;
 }

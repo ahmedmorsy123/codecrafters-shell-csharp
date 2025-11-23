@@ -5,12 +5,12 @@ class Program
         try
         {
             // For testing: add testbin directory to PATH
-            if(OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows())
             {
                 string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
                 Environment.SetEnvironmentVariable("PATH", testBinPath + ";");
             }
-            
+
             var executor = new CommandExecutor();
             while (true)
             {
@@ -23,10 +23,10 @@ class Program
                     break;
                 }
 
-                Command command = CommandParser.Parse(commandLine);
-                
-                // Execute the command and check if we should continue
-                bool shouldContinue = executor.Execute(command);
+                Pipeline pipeline = CommandParser.ParsePipeline(commandLine);
+
+                // Execute the pipeline and check if we should continue
+                bool shouldContinue = executor.ExecutePipeline(pipeline);
                 if (!shouldContinue)
                 {
                     break;
@@ -40,5 +40,5 @@ class Program
             Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
         }
-    }           
+    }
 }
