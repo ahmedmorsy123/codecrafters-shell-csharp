@@ -1,6 +1,6 @@
 public class PipelineHistory
 {
-    private static readonly List<Pipeline> _history = new List<Pipeline>();
+    private static readonly List<(Pipeline pipeline, int position)> _history = new List<(Pipeline, int)>();
     private static int _currentIndex = -1;
 
     /// <summary>
@@ -10,7 +10,7 @@ public class PipelineHistory
     {
         if (pipeline is not null)
         {
-            _history.Add(pipeline);
+            _history.Add((pipeline, _history.Count + 1));
             _currentIndex = _history.Count; // Reset index to the end
         }
     }
@@ -24,7 +24,7 @@ public class PipelineHistory
             return null;
 
         _currentIndex--;
-        return _history[_currentIndex];
+        return _history[_currentIndex].pipeline;
     }
 
     /// <summary>
@@ -36,18 +36,18 @@ public class PipelineHistory
             return null;
 
         _currentIndex++;
-        return _history[_currentIndex];
+        return _history[_currentIndex].pipeline;
     }
 
     /// <summary>
     /// List all commands in history with there args.
     /// </summary>
-    public static IEnumerable<string> ListHistory()
+    public static IEnumerable<(string entry, int position)> ListHistory()
     {
-        foreach (var pipeline in _history)
+        foreach (var entry in _history)
         {
-            if (pipeline == null) continue;
-            yield return pipeline.ToString();
+            if (entry.pipeline == null) continue;
+            yield return (entry.pipeline.ToString(), entry.position);
         }
     }
 

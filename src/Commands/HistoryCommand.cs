@@ -6,7 +6,11 @@ public class HistoryCommand : ICommand
         var historyEntries = PipelineHistory.ListHistory().ToList();
         int limit = int.TryParse(args.ElementAtOrDefault(0), out int parsedLimit) ? parsedLimit : 0;
 
-        historyEntries = historyEntries.Skip(limit).ToList();
+        // If limit is specified, take only the last N entries
+        if (limit > 0 && limit < historyEntries.Count)
+        {
+            historyEntries = historyEntries.Skip(historyEntries.Count - limit).ToList();
+        }
 
         if (historyEntries.Count == 0)
         {
@@ -16,7 +20,7 @@ public class HistoryCommand : ICommand
         {
             for (int i = 0; i < historyEntries.Count; i++)
             {
-                Console.WriteLine($"    {limit + i + 1}  {historyEntries[i]}");
+                Console.WriteLine($"    {historyEntries[i].position}  {historyEntries[i].entry}");
             }
         }
         return true; // Continue running the shell

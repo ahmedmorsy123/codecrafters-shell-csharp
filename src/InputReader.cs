@@ -65,6 +65,43 @@ public class InputReader
                     Console.Write('\x07'); // Beep sound
                 }
             }
+            else if (c == '\x1b')  // ESC character - start of ANSI escape sequence
+            {
+                // Read the next character
+                int next1 = Console.Read();
+                if (next1 == '[')
+                {
+                    int next2 = Console.Read();
+                    if (next2 == 'A')  // Up arrow
+                    {
+                        Pipeline? previous = PipelineHistory.GetPrevious();
+                        if (previous != null)
+                        {
+                            // Clear current input and replace with history
+                            line.Clear();
+                            line.Append(previous.ToString());
+                            Console.Write("\r$ " + line.ToString());
+                        }
+                    }
+                    else if (next2 == 'B')  // Down arrow
+                    {
+                        Pipeline? next = PipelineHistory.GetNext();
+                        if (next != null)
+                        {
+                            line.Clear();
+                            line.Append(next.ToString());
+                            Console.Write("\r$ " + line.ToString());
+                        }
+                        else
+                        {
+                            // At end of history, clear line
+                            line.Clear();
+                            Console.Write("\r$ ");
+                        }
+                    }
+                    // Ignore other escape sequences
+                }
+            }
             else
             {
                 line.Append(c);
