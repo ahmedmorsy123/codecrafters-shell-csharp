@@ -51,4 +51,38 @@ public class PipelineHistory
         }
     }
 
+    /// <summary>
+    /// Read history at startup from the file provided by HISTFILE environment variable
+    /// </summary>
+    public static void LoadHistoryFromFile()
+    {
+        string? histFilePath = Environment.GetEnvironmentVariable("HISTFILE");
+        if (string.IsNullOrEmpty(histFilePath) || !File.Exists(histFilePath))
+        {
+            return;
+        }
+
+        var lines = File.ReadAllLines(histFilePath);
+        foreach (var line in lines)
+        {
+            var pipeline = CommandParser.ParsePipeline(line);
+            Add(pipeline);
+        }
+    }
+
+    /// <summary>
+    /// Write history to the file provided by HISTFILE environment variable at shell exit
+    /// </summary>
+    public static void SaveHistoryToFile()
+    {
+        string? histFilePath = Environment.GetEnvironmentVariable("HISTFILE");
+        if (string.IsNullOrEmpty(histFilePath))
+        {
+            return;
+        }
+
+        var historyEntries = ListHistory();
+        File.WriteAllLines(histFilePath, historyEntries.Select(entry => entry.entry));
+    }
+
 }

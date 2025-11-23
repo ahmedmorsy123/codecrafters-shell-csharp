@@ -16,6 +16,8 @@ class Program
                 Environment.SetEnvironmentVariable("PATH", testBinPath);
             }
 
+            PipelineHistory.LoadHistoryFromFile();
+
             var executor = new CommandExecutor();
             while (true)
             {

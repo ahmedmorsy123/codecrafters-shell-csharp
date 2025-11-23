@@ -5,14 +5,16 @@ public class ExitCommand : ICommand
     {
         // Exit command with optional exit code
         int exitCode = 0;
-        
+
         if (args.Count > 0 && int.TryParse(args[0], out int parsedCode))
         {
             exitCode = parsedCode;
         }
-        
+
+        PipelineHistory.SaveHistoryToFile();
+
         Environment.Exit(exitCode);
-        
+
         // This line will never be reached, but needed for interface contract
         return false;
     }
