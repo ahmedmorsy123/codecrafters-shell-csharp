@@ -91,8 +91,7 @@ public class PipelineHistory
             {
                 if (!string.IsNullOrWhiteSpace(line))
                 {
-                    var pipeline = CommandParser.ParsePipeline(line);
-                    Add(pipeline);
+                    var pipeline = CommandParser.ParsePipeline(line); // this will convert the line to a pipeline and add it to history
                 }
             }
         }
