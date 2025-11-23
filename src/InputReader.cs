@@ -43,7 +43,7 @@ public class InputReader
                     Console.Write(addedPart + " ");
                 }else
                 {
-                    Console.Beep();
+                    Console.Write('\x07'); // Beep sound
                 }
             }
             else
@@ -101,7 +101,7 @@ public class InputReader
                         Console.Write(addedPart + " ");
                     }else
                     {
-                        Console.Beep();
+                        Console.Write('\x07'); // Beep sound
                     }
                 }
             }
