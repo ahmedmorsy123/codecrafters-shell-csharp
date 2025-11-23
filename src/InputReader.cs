@@ -28,7 +28,7 @@ public class InputReader
     {
         StringBuilder line = new StringBuilder();
         int ch;
-        
+
         while ((ch = Console.Read()) != -1 && ch != '\n' && ch != '\r')
         {
             char c = (char)ch;
@@ -38,17 +38,19 @@ public class InputReader
                 List<string> completions = Autocomplete.GetSuggestion(line.ToString());
                 if (completions.Count > 0 && completions[0] != line.ToString())
                 {
-                    if (completions.Count == 1){
+                    if (completions.Count == 1)
+                    {
                         string addedPart = completions[0].Substring(line.Length);
                         line.Append(addedPart + " ");
-                        Console.Write(addedPart);
+                        Console.Write(addedPart + " ");
                     }
                     else
                     {
                         Console.Write('\x07'); // Beep sound
-                        if(Console.Read() == '\t') {
+                        if (Console.Read() == '\t')
+                        {
                             Console.WriteLine();
-                            foreach(var cmd in completions)
+                            foreach (var cmd in completions)
                             {
                                 Console.Write(cmd + "  ");
                             }
@@ -56,7 +58,8 @@ public class InputReader
                             Console.WriteLine("\n$ " + line.ToString());
                         }
                     }
-                }else
+                }
+                else
                 {
                     Console.Write('\x07'); // Beep sound
                 }
@@ -67,7 +70,7 @@ public class InputReader
                 Console.Write(c);
             }
         }
-        
+
         // If we reached EOF before reading any characters, signal EOF
         if (ch == -1 && line.Length == 0)
         {
@@ -106,22 +109,23 @@ public class InputReader
                 // Only autocomplete when cursor is at the end
                 if (cursorPosition == line.Length)
                 {
-                     List<string> completions = Autocomplete.GetSuggestion(line.ToString());
-
+                    List<string> completions = Autocomplete.GetSuggestion(line.ToString());
                     if (completions.Count > 0 && completions[0] != line.ToString())
                     {
-                        if (completions.Count == 1){
+                        if (completions.Count == 1)
+                        {
                             string addedPart = completions[0].Substring(line.Length);
                             line.Append(addedPart + " ");
                             cursorPosition = line.Length;
-                            Console.Write(addedPart);
+                            Console.Write(addedPart + " ");
                         }
                         else
                         {
                             Console.Write('\x07'); // Beep sound
-                            if(Console.ReadKey(intercept: true).Key == ConsoleKey.Tab) {
+                            if (Console.ReadKey(intercept: true).Key == ConsoleKey.Tab)
+                            {
                                 Console.WriteLine();
-                                foreach(var cmd in completions)
+                                foreach (var cmd in completions)
                                 {
                                     Console.Write(cmd + "  ");
                                 }
@@ -130,7 +134,8 @@ public class InputReader
                             }
                         }
 
-                    }else
+                    }
+                    else
                     {
                         Console.Write('\x07'); // Beep sound
                     }
@@ -142,7 +147,7 @@ public class InputReader
                 {
                     line.Remove(cursorPosition - 1, 1);
                     cursorPosition--;
-                    
+
                     // Redraw from cursor to end
                     Console.Write("\b");
                     Console.Write(line.ToString().Substring(cursorPosition) + " ");
@@ -154,7 +159,7 @@ public class InputReader
                 if (cursorPosition < line.Length)
                 {
                     line.Remove(cursorPosition, 1);
-                    
+
                     // Redraw from cursor to end
                     Console.Write(line.ToString().Substring(cursorPosition) + " ");
                     Console.Write(new string('\b', line.Length - cursorPosition + 1));
@@ -181,7 +186,7 @@ public class InputReader
                 // Insert character at cursor position
                 line.Insert(cursorPosition, keyInfo.KeyChar);
                 cursorPosition++;
-                
+
                 // Redraw from cursor to end
                 Console.Write(line.ToString().Substring(cursorPosition - 1));
                 Console.Write(new string('\b', line.Length - cursorPosition));

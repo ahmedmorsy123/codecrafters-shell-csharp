@@ -61,32 +61,43 @@ public static class Autocomplete
     /// </summary>
     public static List<string> GetSuggestion(string prefix)
     {
-        var matches = _trie.GetAllMatchs(prefix).OrderByDescending(s => s).ToList();
-        
+        var matches = _trie.GetAllMatchs(prefix).OrderBy(s => s).ToList();
+
         if (matches.Count == 0)
         {
             return matches;
         }
 
-        // Check if one result is a prefix of all others
-        foreach (var candidate in matches)
+        if (matches.Count == 1)
         {
-            bool isCommonPrefix = true;
-            foreach (var match in matches)
-            {
-                if (!match.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
-                {
-                    isCommonPrefix = false;
-                    break;
-                }
-            }
+            return matches;
+        }
 
-            if (isCommonPrefix)
+        // Find the longest common prefix among all matches
+        string first = matches[0];
+        string last = matches[matches.Count - 1];
+        int commonLength = 0;
+
+        int minLength = Math.Min(first.Length, last.Length);
+        for (int i = 0; i < minLength; i++)
+        {
+            if (char.ToLowerInvariant(first[i]) == char.ToLowerInvariant(last[i]))
             {
-                return new List<string> { candidate };
+                commonLength++;
+            }
+            else
+            {
+                break;
             }
         }
 
+        // If the common prefix is longer than what user typed, return just the common prefix
+        if (commonLength > prefix.Length)
+        {
+            return new List<string> { first.Substring(0, commonLength) };
+        }
+
+        // Otherwise return all matches
         return matches;
     }
 }
