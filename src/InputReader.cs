@@ -48,14 +48,13 @@ public class InputReader
                         Console.Write('\x07'); // Beep sound
                         if(Console.Read() == '\t') {
                             string addedPart = completions[0].Substring(line.Length);
-                            line.Append(addedPart + " ");
                             Console.Write(addedPart + "  ");
                             foreach(var cmd in completions.Skip(1))
                             {
                                 Console.Write(cmd + "");
                             }
                             // Redraw the prompt and current line
-                            Console.Write("\n$ " + line.ToString());
+                            Console.WriteLine("\n$ " + line.ToString());
                         }
                     }
                 }else
@@ -123,8 +122,6 @@ public class InputReader
                             Console.Write('\x07'); // Beep sound
                             if(Console.ReadKey(intercept: true).Key == ConsoleKey.Tab) {
                                 string addedPart = completions[0].Substring(line.Length);
-                                line.Append(addedPart + " ");
-                                cursorPosition = line.Length;
                                 Console.Write(addedPart + "  ");
                                 foreach(var cmd in completions.Skip(1))
                                 {
