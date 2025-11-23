@@ -18,7 +18,10 @@ public class CommandParser
             commands.Add(Parse(segment));
         }
 
-        return new Pipeline(commands);
+        var pipeline = new Pipeline(commands);
+        PipelineHistory.Add(pipeline);
+
+        return pipeline;
     }
 
     /// <summary>
@@ -271,4 +274,9 @@ public class Pipeline
     }
 
     public bool IsSingleCommand => Commands.Count == 1;
+
+    public override string ToString()
+    {
+        return string.Join(" | ", Commands.Select(c => c.ToString()));
+    }
 }

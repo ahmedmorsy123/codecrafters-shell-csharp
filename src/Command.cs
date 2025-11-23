@@ -25,5 +25,11 @@ public class Command
     /// Gets the redirection information
     /// </summary>
     public RedirectionInfo Redirection => _redirection;
+
+    public override string ToString()
+    {
+        var argsString = string.Join(" ", _args);
+        return $"{_commandName} {argsString}".Trim();
+    }
 }
 

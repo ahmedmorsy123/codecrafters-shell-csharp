@@ -105,6 +105,45 @@ public class InputReader
                 Console.WriteLine();
                 return line.ToString();
             }
+            else if (keyInfo.Key == ConsoleKey.UpArrow)
+            {
+                // Get previous command from history
+                Pipeline? previous = PipelineHistory.GetPrevious();
+                if (previous != null)
+                {
+                    // Clear current line
+                    ClearCurrentLine(line.ToString(), cursorPosition);
+
+                    // Set new line from history
+                    line.Clear();
+                    line.Append(previous.ToString());
+                    cursorPosition = line.Length;
+                    Console.Write(line.ToString());
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.DownArrow)
+            {
+                // Get next command from history
+                Pipeline? next = PipelineHistory.GetNext();
+                if (next != null)
+                {
+                    // Clear current line
+                    ClearCurrentLine(line.ToString(), cursorPosition);
+
+                    // Set new line from history
+                    line.Clear();
+                    line.Append(next.ToString());
+                    cursorPosition = line.Length;
+                    Console.Write(line.ToString());
+                }
+                else
+                {
+                    // At the end of history, clear the line
+                    ClearCurrentLine(line.ToString(), cursorPosition);
+                    line.Clear();
+                    cursorPosition = 0;
+                }
+            }
             else if (keyInfo.Key == ConsoleKey.Tab)
             {
                 // Only autocomplete when cursor is at the end
@@ -194,5 +233,18 @@ public class InputReader
                 Console.Write(new string('\b', line.Length - cursorPosition));
             }
         }
+    }
+
+    /// <summary>
+    /// Clears the current line in the console
+    /// </summary>
+    private static void ClearCurrentLine(string currentText, int cursorPosition)
+    {
+        // Move cursor to the beginning of the line
+        Console.Write(new string('\b', cursorPosition));
+        // Overwrite the entire line with spaces
+        Console.Write(new string(' ', currentText.Length));
+        // Move cursor back to the beginning
+        Console.Write(new string('\b', currentText.Length));
     }
 }
