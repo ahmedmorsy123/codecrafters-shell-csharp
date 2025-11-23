@@ -61,6 +61,32 @@ public static class Autocomplete
     /// </summary>
     public static List<string> GetSuggestion(string prefix)
     {
-        return _trie.GetAllMatchs(prefix);
+        var matches = _trie.GetAllMatchs(prefix).OrderByDescending(s => s).ToList();
+        
+        if (matches.Count == 0)
+        {
+            return matches;
+        }
+
+        // Check if one result is a prefix of all others
+        foreach (var candidate in matches)
+        {
+            bool isCommonPrefix = true;
+            foreach (var match in matches)
+            {
+                if (!match.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    isCommonPrefix = false;
+                    break;
+                }
+            }
+
+            if (isCommonPrefix)
+            {
+                return new List<string> { candidate };
+            }
+        }
+
+        return matches;
     }
 }

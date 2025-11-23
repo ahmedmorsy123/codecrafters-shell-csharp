@@ -4,6 +4,12 @@ class Program
     {
         try
         {
+            // For testing: add testbin directory to PATH
+            if(OperatingSystem.IsWindows())
+            {
+                string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
+                Environment.SetEnvironmentVariable("PATH", testBinPath + ";");
+            }
             
             var executor = new CommandExecutor();
             while (true)
