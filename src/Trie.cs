@@ -90,4 +90,9 @@ public class Trie
     {
         return FindAllWithPrefix(prefix, 1).FirstOrDefault();
     }
+
+    public List<string> GetAllMatchs(string prefix)
+    {
+        return FindAllWithPrefix(prefix);
+    }
 }

@@ -59,8 +59,8 @@ public static class Autocomplete
     /// <summary>
     /// Gets the first suggestion for the given prefix or null
     /// </summary>
-    public static string? GetSuggestion(string prefix)
+    public static List<string> GetSuggestion(string prefix)
     {
-        return _trie.GetFirstMatch(prefix);
+        return _trie.GetAllMatchs(prefix);
     }
 }

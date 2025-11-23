@@ -35,12 +35,27 @@ public class InputReader
 
             if (c == '\t')  // Tab character
             {
-                string? completion = Autocomplete.GetSuggestion(line.ToString());
-                if (completion != null && completion != line.ToString())
+                List<string> completions = Autocomplete.GetSuggestion(line.ToString());
+                if (completions.Count > 0 && completions[0] != line.ToString())
                 {
-                    string addedPart = completion.Substring(line.Length);
-                    line.Append(addedPart + " ");
-                    Console.Write(addedPart + " ");
+                    if (completions.Count == 1){
+                        string addedPart = completions[0].Substring(line.Length);
+                        line.Append(addedPart + " ");
+                        Console.Write(addedPart + " ");
+                    }
+                    else
+                    {
+                        Console.Write('\x07'); // Beep sound
+                        if(Console.Read() == '\t') {
+                            string addedPart = completions[0].Substring(line.Length);
+                            line.Append(addedPart + " ");
+                            Console.Write(addedPart + "  ");
+                            foreach(var cmd in completions.Skip(1))
+                            {
+                                Console.Write(cmd + "");
+                            }
+                        }
+                    }
                 }else
                 {
                     Console.Write('\x07'); // Beep sound
@@ -91,14 +106,31 @@ public class InputReader
                 // Only autocomplete when cursor is at the end
                 if (cursorPosition == line.Length)
                 {
-                    string? suggestion = Autocomplete.GetSuggestion(line.ToString());
+                     List<string> completions = Autocomplete.GetSuggestion(line.ToString());
 
-                    if (suggestion != null && suggestion != line.ToString())
+                    if (completions.Count > 0 && completions[0] != line.ToString())
                     {
-                        string addedPart = suggestion.Substring(line.Length);
-                        line.Append(addedPart + " ");
-                        cursorPosition = line.Length;
-                        Console.Write(addedPart + " ");
+                        if (completions.Count == 1){
+                            string addedPart = completions[0].Substring(line.Length);
+                            line.Append(addedPart + " ");
+                            cursorPosition = line.Length;
+                            Console.Write(addedPart + " ");
+                        }
+                        else
+                        {
+                            Console.Write('\x07'); // Beep sound
+                            if(Console.ReadKey(intercept: true).Key == ConsoleKey.Tab) {
+                                string addedPart = completions[0].Substring(line.Length);
+                                line.Append(addedPart + " ");
+                                cursorPosition = line.Length;
+                                Console.Write(addedPart + "  ");
+                                foreach(var cmd in completions.Skip(1))
+                                {
+                                    Console.Write(cmd + "  ");
+                                }
+                            }
+                        }
+
                     }else
                     {
                         Console.Write('\x07'); // Beep sound
