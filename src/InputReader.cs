@@ -54,6 +54,8 @@ public class InputReader
                             {
                                 Console.Write(cmd + "");
                             }
+                            // Redraw the prompt and current line
+                            Console.Write("\n$ " + line.ToString());
                         }
                     }
                 }else
@@ -128,6 +130,8 @@ public class InputReader
                                 {
                                     Console.Write(cmd + "  ");
                                 }
+                                // Redraw the prompt and current line
+                                Console.Write("\n$ " + line.ToString());
                             }
                         }
 
