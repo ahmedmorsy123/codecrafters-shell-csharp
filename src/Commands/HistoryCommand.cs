@@ -10,6 +10,12 @@ public class HistoryCommand : ICommand
         // 3- history -w <path_to_history_file> => to write the history to a file
         // 4- history -a <path_to_history_file> => to append the history to a file
         // and we also can read/write/append from/to the default history file that is the HISTFILE environment variable
+
+        if (args.Count() == 0)
+        {
+            return GetHistoryWithLimit(0);
+        }
+
         switch (args[0])
         {
             case "-r":
@@ -72,8 +78,8 @@ public class HistoryCommand : ICommand
         var lines = File.ReadAllLines(filePath);
         foreach (var line in lines)
         {
-            var pipeline = CommandParser.ParsePipeline(line);
-            PipelineHistory.Add(pipeline);
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            var pipeline = CommandParser.ParsePipeline(line); // this will convert the line to a pipeline and add it to history
         }
 
         return true;

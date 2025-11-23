@@ -57,16 +57,48 @@ public class PipelineHistory
     public static void LoadHistoryFromFile()
     {
         string? histFilePath = Environment.GetEnvironmentVariable("HISTFILE");
-        if (string.IsNullOrEmpty(histFilePath) || !File.Exists(histFilePath))
+        if (string.IsNullOrEmpty(histFilePath))
         {
             return;
         }
 
-        var lines = File.ReadAllLines(histFilePath);
-        foreach (var line in lines)
+        // Expand ~ to home directory if needed
+        if (histFilePath.StartsWith("~/") || histFilePath.StartsWith("~\\"))
         {
-            var pipeline = CommandParser.ParsePipeline(line);
-            Add(pipeline);
+            string? home = Environment.GetEnvironmentVariable("HOME")
+                ?? Environment.GetEnvironmentVariable("USERPROFILE");
+            if (!string.IsNullOrEmpty(home))
+            {
+                histFilePath = Path.Combine(home, histFilePath.Substring(2));
+            }
+        }
+
+        // Convert to absolute path if relative
+        if (!Path.IsPathRooted(histFilePath))
+        {
+            histFilePath = Path.GetFullPath(histFilePath);
+        }
+
+        if (!File.Exists(histFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            var lines = File.ReadAllLines(histFilePath);
+            foreach (var line in lines)
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    var pipeline = CommandParser.ParsePipeline(line);
+                    Add(pipeline);
+                }
+            }
+        }
+        catch
+        {
+            // Ignore errors reading history file
         }
     }
 
@@ -81,8 +113,39 @@ public class PipelineHistory
             return;
         }
 
-        var historyEntries = ListHistory();
-        File.WriteAllLines(histFilePath, historyEntries.Select(entry => entry.entry));
+        // Expand ~ to home directory if needed
+        if (histFilePath.StartsWith("~/") || histFilePath.StartsWith("~\\"))
+        {
+            string? home = Environment.GetEnvironmentVariable("HOME")
+                ?? Environment.GetEnvironmentVariable("USERPROFILE");
+            if (!string.IsNullOrEmpty(home))
+            {
+                histFilePath = Path.Combine(home, histFilePath.Substring(2));
+            }
+        }
+
+        // Convert to absolute path if relative
+        if (!Path.IsPathRooted(histFilePath))
+        {
+            histFilePath = Path.GetFullPath(histFilePath);
+        }
+
+        try
+        {
+            // Create directory if it doesn't exist
+            string? directory = Path.GetDirectoryName(histFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var historyEntries = ListHistory();
+            File.WriteAllLines(histFilePath, historyEntries.Select(entry => entry.entry));
+        }
+        catch
+        {
+            // Ignore errors writing history file
+        }
     }
 
 }

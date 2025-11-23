@@ -10,9 +10,6 @@ public class ExitCommand : ICommand
         {
             exitCode = parsedCode;
         }
-
-        PipelineHistory.SaveHistoryToFile();
-
         Environment.Exit(exitCode);
 
         // This line will never be reached, but needed for interface contract

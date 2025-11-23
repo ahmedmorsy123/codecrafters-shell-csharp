@@ -39,6 +39,9 @@ class Program
                     break;
                 }
             }
+
+            // Save history before exiting
+            PipelineHistory.SaveHistoryToFile();
         }
         catch (Exception ex)
         {
