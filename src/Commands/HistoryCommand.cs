@@ -16,7 +16,7 @@ public class HistoryCommand : ICommand
         {
             for (int i = 0; i < historyEntries.Count; i++)
             {
-                Console.WriteLine($"{limit + i + 1}: {historyEntries[i]}");
+                Console.WriteLine($"    {limit + i + 1}  {historyEntries[i]}");
             }
         }
         return true; // Continue running the shell
