@@ -138,12 +138,12 @@ public class PipelineHistory
                 Directory.CreateDirectory(directory);
             }
 
-            var historyEntries = ListHistory();
+            var historyEntries = ListHistory().ToList();
             File.WriteAllLines(histFilePath, historyEntries.Select(entry => entry.entry));
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore errors writing history file
+            Console.Error.WriteLine($"Error saving history: {ex.Message}");
         }
     }
 
