@@ -35,14 +35,15 @@ public class InputReader
 
             if (c == '\t')  // Tab character
             {
-                List<string> completions = Autocomplete.GetSuggestion(line.ToString());
-                if (completions.Count > 0 && completions[0] != line.ToString())
+                CompletionResult result = Autocomplete.GetSuggestion(line.ToString());
+                if (result.Matches.Count > 0 && result.Matches[0] != line.ToString())
                 {
-                    if (completions.Count == 1)
+                    if (result.Matches.Count == 1)
                     {
-                        string addedPart = completions[0].Substring(line.Length);
-                        line.Append(addedPart);
-                        Console.Write(addedPart);
+                        string addedPart = result.Matches[0].Substring(line.Length);
+                        string suffix = result.IsComplete ? " " : "";
+                        line.Append(addedPart + suffix);
+                        Console.Write(addedPart + suffix);
                     }
                     else
                     {
@@ -50,7 +51,7 @@ public class InputReader
                         if (Console.Read() == '\t')
                         {
                             Console.WriteLine();
-                            foreach (var cmd in completions)
+                            foreach (var cmd in result.Matches)
                             {
                                 Console.Write(cmd + "  ");
                             }
@@ -109,15 +110,16 @@ public class InputReader
                 // Only autocomplete when cursor is at the end
                 if (cursorPosition == line.Length)
                 {
-                    List<string> completions = Autocomplete.GetSuggestion(line.ToString());
-                    if (completions.Count > 0 && completions[0] != line.ToString())
+                    CompletionResult result = Autocomplete.GetSuggestion(line.ToString());
+                    if (result.Matches.Count > 0 && result.Matches[0] != line.ToString())
                     {
-                        if (completions.Count == 1)
+                        if (result.Matches.Count == 1)
                         {
-                            string addedPart = completions[0].Substring(line.Length);
-                            line.Append(addedPart);
+                            string addedPart = result.Matches[0].Substring(line.Length);
+                            string suffix = result.IsComplete ? " " : "";
+                            line.Append(addedPart + suffix);
                             cursorPosition = line.Length;
-                            Console.Write(addedPart);
+                            Console.Write(addedPart + suffix);
                         }
                         else
                         {
@@ -125,7 +127,7 @@ public class InputReader
                             if (Console.ReadKey(intercept: true).Key == ConsoleKey.Tab)
                             {
                                 Console.WriteLine();
-                                foreach (var cmd in completions)
+                                foreach (var cmd in result.Matches)
                                 {
                                     Console.Write(cmd + "  ");
                                 }

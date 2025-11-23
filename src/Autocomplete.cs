@@ -1,6 +1,15 @@
 using System.Collections.Generic;
 
 /// <summary>
+/// Result of an autocomplete operation
+/// </summary>
+public class CompletionResult
+{
+    public List<string> Matches { get; set; } = new List<string>();
+    public bool IsComplete { get; set; } // True if single complete match, false if partial/multiple
+}
+
+/// <summary>
 /// Small wrapper around Trie to own autocomplete responsibilities.
 /// </summary>
 public static class Autocomplete
@@ -57,20 +66,20 @@ public static class Autocomplete
     }
 
     /// <summary>
-    /// Gets the first suggestion for the given prefix or null
+    /// Gets autocomplete suggestions for the given prefix
     /// </summary>
-    public static List<string> GetSuggestion(string prefix)
+    public static CompletionResult GetSuggestion(string prefix)
     {
         var matches = _trie.GetAllMatchs(prefix).OrderBy(s => s).ToList();
 
         if (matches.Count == 0)
         {
-            return matches;
+            return new CompletionResult { Matches = matches, IsComplete = false };
         }
 
         if (matches.Count == 1)
         {
-            return matches;
+            return new CompletionResult { Matches = matches, IsComplete = true };
         }
 
         // Find the longest common prefix among all matches
@@ -94,10 +103,14 @@ public static class Autocomplete
         // If the common prefix is longer than what user typed, return just the common prefix
         if (commonLength > prefix.Length)
         {
-            return new List<string> { first.Substring(0, commonLength) };
+            return new CompletionResult
+            {
+                Matches = new List<string> { first.Substring(0, commonLength) },
+                IsComplete = false // Partial completion, not a complete match
+            };
         }
 
         // Otherwise return all matches
-        return matches;
+        return new CompletionResult { Matches = matches, IsComplete = false };
     }
 }
