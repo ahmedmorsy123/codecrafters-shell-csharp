@@ -128,6 +128,7 @@ public class CommandExecutor
         List<Process> processes = new List<Process>();
         List<Task> pipeTasks = new List<Task>();
         Task? outputTask = null;
+        string? builtinOutput = null; // Store output from previous builtin command
 
         try
         {
@@ -140,22 +141,36 @@ public class CommandExecutor
                 // Check if it's a builtin command
                 if (_commands.ContainsKey(cmd.CommandName))
                 {
-                    // For builtin commands in a pipeline, we need to capture output
-                    // and pass it to the next command
-                    if (!ExecuteBuiltinInPipeline(cmd, isFirst, isLast, processes))
+                    // Execute builtin and capture output
+                    var result = ExecuteBuiltinInPipeline(cmd, isFirst, isLast);
+                    if (!result.success)
                     {
-                        return true;
+                        return false; // Exit command
+                    }
+
+                    if (isLast)
+                    {
+                        // Last command - output to console
+                        Console.Write(result.output);
+                    }
+                    else
+                    {
+                        // Not last - store output for next command
+                        builtinOutput = result.output;
                     }
                 }
                 else
                 {
                     // External command
-                    var result = ExecuteExternalInPipeline(cmd, isFirst, isLast, processes, pipeTasks);
+                    var result = ExecuteExternalInPipeline(cmd, isFirst, isLast, processes, pipeTasks, builtinOutput);
                     if (!result.success)
                     {
                         Console.WriteLine($"{cmd.CommandName}: command not found");
                         return true;
                     }
+
+                    // Clear builtin output after using it
+                    builtinOutput = null;
 
                     if (isLast && result.outputTask != null)
                     {
@@ -209,7 +224,7 @@ public class CommandExecutor
     /// <summary>
     /// Executes a builtin command as part of a pipeline
     /// </summary>
-    private bool ExecuteBuiltinInPipeline(Command cmd, bool isFirst, bool isLast, List<Process> processes)
+    private (bool success, string output) ExecuteBuiltinInPipeline(Command cmd, bool isFirst, bool isLast)
     {
         // Capture output of builtin command
         using (var writer = new StringWriter())
@@ -225,7 +240,7 @@ public class CommandExecutor
                     if (cmd.CommandName.Equals("exit", StringComparison.OrdinalIgnoreCase))
                     {
                         Console.SetOut(originalOut);
-                        return false; // Signal to exit the shell
+                        return (false, string.Empty); // Signal to exit the shell
                     }
 
                     commandInstance.Execute(cmd.Args);
@@ -236,29 +251,14 @@ public class CommandExecutor
                 Console.SetOut(originalOut);
             }
 
-            string output = writer.ToString();
-
-            if (isLast)
-            {
-                // Last command - output to console
-                Console.Write(output);
-            }
-            else
-            {
-                // Not last - need to pipe output to next command
-                // For simplicity, we'll write to stdin of the next process
-                // This is handled when creating the next process
-                // For now, store output (this is simplified - real implementation would use pipes)
-            }
+            return (true, writer.ToString());
         }
-
-        return true;
     }
 
     /// <summary>
     /// Executes an external command as part of a pipeline
     /// </summary>
-    private (bool success, Task? outputTask) ExecuteExternalInPipeline(Command cmd, bool isFirst, bool isLast, List<Process> processes, List<Task> pipeTasks)
+    private (bool success, Task? outputTask) ExecuteExternalInPipeline(Command cmd, bool isFirst, bool isLast, List<Process> processes, List<Task> pipeTasks, string? builtinInput)
     {
         string? executablePath = FindExecutableInPath(cmd.CommandName);
 
@@ -271,7 +271,7 @@ public class CommandExecutor
         {
             FileName = executablePath,
             UseShellExecute = false,
-            RedirectStandardInput = !isFirst,
+            RedirectStandardInput = !isFirst || builtinInput != null, // Redirect stdin if not first OR if we have builtin input
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             CreateNoWindow = true
@@ -288,8 +288,25 @@ public class CommandExecutor
             return (false, null);
         }
 
-        // Connect pipes between processes
-        if (!isFirst && processes.Count > 0)
+        // Connect pipes between processes or feed builtin output
+        if (builtinInput != null)
+        {
+            // Previous command was a builtin - write its output to this process's stdin
+            var pipeTask = Task.Run(async () =>
+            {
+                try
+                {
+                    await process.StandardInput.WriteAsync(builtinInput);
+                    process.StandardInput.Close();
+                }
+                catch
+                {
+                    // Ignore pipe errors
+                }
+            });
+            pipeTasks.Add(pipeTask);
+        }
+        else if (!isFirst && processes.Count > 0)
         {
             var previousProcess = processes[processes.Count - 1];
             // Pipe previous process stdout to current process stdin
