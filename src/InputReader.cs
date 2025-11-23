@@ -48,7 +48,7 @@ public class InputReader
                         Console.Write('\x07'); // Beep sound
                         if(Console.Read() == '\t') {
                             Console.WriteLine();
-                            foreach(var cmd in completions)
+                            foreach(var cmd in completions.OrderBy(c => c))
                             {
                                 Console.Write(cmd + "  ");
                             }
@@ -121,7 +121,7 @@ public class InputReader
                             Console.Write('\x07'); // Beep sound
                             if(Console.ReadKey(intercept: true).Key == ConsoleKey.Tab) {
                                 Console.WriteLine();
-                                foreach(var cmd in completions)
+                                foreach(var cmd in completions.OrderBy(c => c))
                                 {
                                     Console.Write(cmd + "  ");
                                 }
