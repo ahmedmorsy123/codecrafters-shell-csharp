@@ -41,7 +41,7 @@ public class InputReader
                     if (completions.Count == 1){
                         string addedPart = completions[0].Substring(line.Length);
                         line.Append(addedPart + " ");
-                        Console.Write(addedPart + " ");
+                        Console.Write(addedPart);
                     }
                     else
                     {
@@ -114,7 +114,7 @@ public class InputReader
                             string addedPart = completions[0].Substring(line.Length);
                             line.Append(addedPart + " ");
                             cursorPosition = line.Length;
-                            Console.Write(addedPart + " ");
+                            Console.Write(addedPart);
                         }
                         else
                         {
