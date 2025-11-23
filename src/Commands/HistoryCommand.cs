@@ -45,6 +45,7 @@ public class HistoryCommand : ICommand
         }
 
         var historyEntries = PipelineHistory.ListHistory();
+        PipelineHistory.ClearHistory();
         File.AppendAllLines(filePath, historyEntries.Select(entry => entry.entry));
         return true;
     }

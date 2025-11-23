@@ -148,4 +148,9 @@ public class PipelineHistory
         }
     }
 
+    public static void ClearHistory()
+    {
+        _history.Clear();
+        _currentIndex = -1;
+    }
 }
