@@ -1,7 +1,7 @@
 public class CommandExecutor
 {
     private static readonly Dictionary<string, ICommand> _commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase);
-    private static readonly Trie _commandTrie = new Trie();
+    // CommandExecutor focuses on command registration and execution only.
 
     public CommandExecutor()
     {
@@ -44,7 +44,7 @@ public class CommandExecutor
                 }
 
                 _commands[attribute.Name] = commandInstance;
-                _commandTrie.Insert(attribute.Name); // Add to Trie
+                Autocomplete.Register(attribute.Name); // Register in Autocomplete
             }
         }
     }
@@ -66,16 +66,6 @@ public class CommandExecutor
     public static IEnumerable<string> GetBuiltinCommands()
     {
         return _commands.Keys;
-    }
-
-    /// <summary>
-    /// Gets autocomplete suggestion for a prefix using Trie
-    /// </summary>
-    /// <param name="prefix">The prefix to autocomplete</param>
-    /// <returns>First matching command or null</returns>
-    public static string? GetAutocomplete(string prefix)
-    {
-        return _commandTrie.GetFirstMatch(prefix);
     }
 
     /// <summary>

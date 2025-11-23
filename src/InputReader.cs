@@ -8,38 +8,70 @@ public class InputReader
     /// <summary>
     /// Reads a line of input with tab autocomplete support for builtin commands
     /// </summary>
-    public static string ReadLine()
+    public static string? ReadLine()
     {
         // Check if stdin is redirected (e.g., from a pipe or file)
-        // If redirected, read and echo character by character for test visibility
         if (Console.IsInputRedirected)
         {
-            StringBuilder line = new StringBuilder();
-            int ch;
-            while ((ch = Console.Read()) != -1 && ch != '\n' && ch != '\r')
+            return ReadRedirectedInput();
+        }
+        else
+        {
+            return ReadInteractiveInput();
+        }
+    }
+
+    /// <summary>
+    /// Reads input from redirected stdin (for automated tests)
+    /// </summary>
+    private static string? ReadRedirectedInput()
+    {
+        StringBuilder line = new StringBuilder();
+        int ch;
+        
+        while ((ch = Console.Read()) != -1 && ch != '\n' && ch != '\r')
+        {
+            char c = (char)ch;
+
+            if (c == '\t')  // Tab character
             {
-                char c = (char)ch;
-                line.Append(c);
-                Console.Write(c); // Echo immediately so tests can see it
-            }
-            
-            // Handle \r\n (Windows) vs \n (Unix)
-            if (ch == '\r')
-            {
-                int next = Console.Read();
-                if (next != '\n' && next != -1)
+                string? completion = Autocomplete.GetSuggestion(line.ToString());
+                if (completion != null && completion != line.ToString())
                 {
-                    // Put it back... but we can't, so just ignore
+                    string addedPart = completion.Substring(line.Length);
+                    line.Append(addedPart);
+                    Console.Write(addedPart);
                 }
             }
-            
-            return line.ToString();
+            else
+            {
+                line.Append(c);
+                Console.Write(c);
+            }
+        }
+        
+        // If we reached EOF before reading any characters, signal EOF
+        if (ch == -1 && line.Length == 0)
+        {
+            return null;
         }
 
-        // Interactive mode with autocomplete
-        StringBuilder input = new StringBuilder();
-        int cursorPosition = 0;
-        int startColumn = Console.CursorLeft; // Remember where input starts (after "$ ")
+        // Handle \r\n (Windows) vs \n (Unix)
+        if (ch == '\r')
+        {
+            int next = Console.Read();
+            // Just consume the \n if it exists
+        }
+
+        return line.ToString();
+    }
+
+    /// <summary>
+    /// Reads input interactively with simple Tab completion
+    /// </summary>
+    private static string ReadInteractiveInput()
+    {
+        StringBuilder line = new StringBuilder();
 
         while (true)
         {
@@ -47,93 +79,28 @@ public class InputReader
 
             if (keyInfo.Key == ConsoleKey.Enter)
             {
-                // Submit the command
                 Console.WriteLine();
-                return input.ToString();
+                return line.ToString();
             }
             else if (keyInfo.Key == ConsoleKey.Tab)
             {
-                // Autocomplete using Trie
-                string currentInput = input.ToString();
-                string? completion = CommandExecutor.GetAutocomplete(currentInput);
+                // Try to find a completion and append only the missing letters
+                string? suggestion = Autocomplete.GetSuggestion(line.ToString());
 
-                if (completion != null && completion != currentInput)
+                if (suggestion != null && suggestion != line.ToString())
                 {
-                    // Replace with autocompleted text
-                    input.Clear();
-                    input.Append(completion);
-                    cursorPosition = completion.Length;
-
-                    // Redraw
-                    RedrawLine(text: completion, cursorPosition, startColumn);
-                }
-            }
-            else if (keyInfo.Key == ConsoleKey.Backspace)
-            {
-                // Delete character before cursor
-                if (cursorPosition > 0)
-                {
-                    input.Remove(cursorPosition - 1, 1);
-                    cursorPosition--;
-
-                    // Redraw the line
-                    RedrawLine(input.ToString(), cursorPosition, startColumn);
-                }
-            }
-            else if (keyInfo.Key == ConsoleKey.Delete)
-            {
-                // Delete character at cursor
-                if (cursorPosition < input.Length)
-                {
-                    input.Remove(cursorPosition, 1);
-
-                    // Redraw the line
-                    RedrawLine(input.ToString(), cursorPosition, startColumn);
-                }
-            }
-            else if (keyInfo.Key == ConsoleKey.LeftArrow)
-            {
-                // Move cursor left
-                if (cursorPosition > 0)
-                {
-                    cursorPosition--;
-                    Console.CursorLeft--;
-                }
-            }
-            else if (keyInfo.Key == ConsoleKey.RightArrow)
-            {
-                // Move cursor right
-                if (cursorPosition < input.Length)
-                {
-                    cursorPosition++;
-                    Console.CursorLeft++;
+                    string addedPart = suggestion.Substring(line.Length);
+                    line.Append(addedPart);
+                    Console.Write(addedPart);
                 }
             }
             else if (!char.IsControl(keyInfo.KeyChar))
             {
-                // Regular character input - insert at cursor position
-                input.Insert(cursorPosition, keyInfo.KeyChar);
-                cursorPosition++;
-
-                // Redraw from cursor position to end
-                RedrawLine(input.ToString(), cursorPosition, startColumn);
+                // Append regular characters
+                line.Append(keyInfo.KeyChar);
+                Console.Write(keyInfo.KeyChar);
             }
+            // Ignore all other keys (backspace, delete, arrows, etc.)
         }
-    }
-
-    /// <summary>
-    /// Redraws the entire input line and positions cursor correctly
-    /// </summary>
-    private static void RedrawLine(string text, int cursorPosition, int startColumn)
-    {
-        // Move cursor to the start of the input text
-        Console.CursorLeft = startColumn;
-        
-        // Write the entire text followed by spaces to clear any leftover characters
-        Console.Write(text);
-        Console.Write("   "); // Extra spaces to clear remaining characters
-        
-        // Move cursor back to the correct position
-        Console.CursorLeft = startColumn + cursorPosition;
     }
 }

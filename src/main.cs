@@ -9,8 +9,14 @@ class Program
             while (true)
             {
                 Console.Write("$ ");
-            
-                string commandLine = InputReader.ReadLine(); 
+
+                string? commandLine = InputReader.ReadLine();
+                if (commandLine == null)
+                {
+                    // EOF on redirected input — stop the shell loop
+                    break;
+                }
+
                 Command command = CommandParser.Parse(commandLine);
                 
                 // Execute the command and check if we should continue
