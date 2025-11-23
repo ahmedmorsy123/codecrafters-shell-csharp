@@ -47,11 +47,10 @@ public class InputReader
                     {
                         Console.Write('\x07'); // Beep sound
                         if(Console.Read() == '\t') {
-                            string addedPart = completions[0].Substring(line.Length);
-                            Console.Write(addedPart + "  ");
-                            foreach(var cmd in completions.Skip(1))
+                            Console.WriteLine();
+                            foreach(var cmd in completions)
                             {
-                                Console.Write(cmd + "");
+                                Console.Write(cmd + "  ");
                             }
                             // Redraw the prompt and current line
                             Console.WriteLine("\n$ " + line.ToString());
@@ -121,9 +120,8 @@ public class InputReader
                         {
                             Console.Write('\x07'); // Beep sound
                             if(Console.ReadKey(intercept: true).Key == ConsoleKey.Tab) {
-                                string addedPart = completions[0].Substring(line.Length);
-                                Console.Write(addedPart + "  ");
-                                foreach(var cmd in completions.Skip(1))
+                                Console.WriteLine();
+                                foreach(var cmd in completions)
                                 {
                                     Console.Write(cmd + "  ");
                                 }
