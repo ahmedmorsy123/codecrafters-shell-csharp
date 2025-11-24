@@ -98,9 +98,7 @@ public class CommandExecutor
             return true;
         }
 
-        // Command not found
-        Console.WriteLine($"{command.CommandName}: command not found");
-        return true; // Continue running the shell
+        throw new CommandNotFoundException(command.CommandName);
     }
 
     /// <summary>
@@ -165,8 +163,7 @@ public class CommandExecutor
                     var result = ExecuteExternalInPipeline(cmd, isFirst, isLast, processes, pipeTasks, builtinOutput);
                     if (!result.success)
                     {
-                        Console.WriteLine($"{cmd.CommandName}: command not found");
-                        return true;
+                        throw new CommandNotFoundException(cmd.CommandName);
                     }
 
                     // Clear builtin output after using it

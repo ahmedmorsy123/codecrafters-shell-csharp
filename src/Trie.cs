@@ -91,8 +91,17 @@ public class Trie
         return FindAllWithPrefix(prefix, 1).FirstOrDefault();
     }
 
-    public List<string> GetAllMatchs(string prefix)
+    public List<string> GetAllMatches(string prefix)
     {
         return FindAllWithPrefix(prefix);
+    }
+
+    /// <summary>
+    /// Clears the trie
+    /// </summary>
+    public void Clear()
+    {
+        _root.Children.Clear();
+        _root.IsEndOfWord = false;
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 
 /// <summary>
@@ -5,13 +6,24 @@ using System.Text;
 /// </summary>
 public class InputReader
 {
+    // Console abstraction – can be swapped for testing
+    private static IConsole _console = new RealConsole();
+
+    /// <summary>
+    /// Allows injecting a custom IConsole (e.g., a mock for tests)
+    /// </summary>
+    public static void SetConsole(IConsole console)
+    {
+        _console = console ?? throw new ArgumentNullException(nameof(console));
+    }
+
     /// <summary>
     /// Reads a line of input with tab autocomplete support for builtin commands
     /// </summary>
     public static string? ReadLine()
     {
         // Check if stdin is redirected (e.g., from a pipe or file)
-        if (Console.IsInputRedirected)
+        if (_console.IsInputRedirected)
         {
             return ReadRedirectedInput();
         }
@@ -29,11 +41,11 @@ public class InputReader
         StringBuilder line = new StringBuilder();
         int ch;
 
-        while ((ch = Console.Read()) != -1 && ch != '\n' && ch != '\r')
+        while ((ch = _console.Read()) != -1 && ch != '\n' && ch != '\r')
         {
             char c = (char)ch;
 
-            if (c == '\t')  // Tab character
+            if (c == '\t') // Tab character
             {
                 CompletionResult result = Autocomplete.GetSuggestion(line.ToString());
                 if (result.Matches.Count > 0 && result.Matches[0] != line.ToString())
@@ -43,83 +55,78 @@ public class InputReader
                         string addedPart = result.Matches[0].Substring(line.Length);
                         string suffix = result.IsComplete ? " " : "";
                         line.Append(addedPart + suffix);
-                        Console.Write(addedPart + suffix);
+                        _console.Write(addedPart + suffix);
                     }
                     else
                     {
-                        Console.Write('\x07'); // Beep sound
-                        if (Console.Read() == '\t')
+                        _console.Write('\x07'); // Beep
+                        if (_console.Read() == '\t')
                         {
-                            Console.WriteLine();
+                            _console.WriteLine("");
                             foreach (var cmd in result.Matches)
                             {
-                                Console.Write(cmd + "  ");
+                                _console.Write(cmd + "  ");
                             }
-                            // Redraw the prompt and current line
-                            Console.WriteLine("\n$ " + line.ToString());
+                            // Redraw prompt and current line
+                            _console.WriteLine("\n$ " + line.ToString());
                         }
                     }
                 }
                 else
                 {
-                    Console.Write('\x07'); // Beep sound
+                    _console.Write('\x07'); // Beep
                 }
             }
-            else if (c == '\x1b')  // ESC character - start of ANSI escape sequence
+            else if (c == '\x1b') // ESC – start of ANSI sequence
             {
-                // Read the next character
-                int next1 = Console.Read();
+                int next1 = _console.Read();
                 if (next1 == '[')
                 {
-                    int next2 = Console.Read();
-                    if (next2 == 'A')  // Up arrow
+                    int next2 = _console.Read();
+                    if (next2 == 'A') // Up arrow
                     {
-                        Pipeline? previous = PipelineHistory.GetPrevious();
+                        var previous = PipelineHistory.GetPrevious();
                         if (previous != null)
                         {
-                            // Clear current input and replace with history
                             line.Clear();
                             line.Append(previous.ToString());
-                            Console.Write("\r$ " + line.ToString());
+                            _console.Write("\r$ " + line.ToString());
                         }
                     }
-                    else if (next2 == 'B')  // Down arrow
+                    else if (next2 == 'B') // Down arrow
                     {
-                        Pipeline? next = PipelineHistory.GetNext();
+                        var next = PipelineHistory.GetNext();
                         if (next != null)
                         {
                             line.Clear();
                             line.Append(next.ToString());
-                            Console.Write("\r$ " + line.ToString());
+                            _console.Write("\r$ " + line.ToString());
                         }
                         else
                         {
-                            // At end of history, clear line
                             line.Clear();
-                            Console.Write("\r$ ");
+                            _console.Write("\r$ ");
                         }
                     }
-                    // Ignore other escape sequences
                 }
             }
             else
             {
                 line.Append(c);
-                Console.Write(c);
+                _console.Write(c);
             }
         }
 
-        // If we reached EOF before reading any characters, signal EOF
+        // EOF with no characters -> null
         if (ch == -1 && line.Length == 0)
         {
             return null;
         }
 
-        // Handle \r\n (Windows) vs \n (Unix)
+        // Handle Windows \r\n vs Unix \n
         if (ch == '\r')
         {
-            int next = Console.Read();
-            // Just consume the \n if it exists
+            _ = _console.Read(); // consume \n if present
         }
 
         return line.ToString();
@@ -135,87 +142,73 @@ public class InputReader
 
         while (true)
         {
-            ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
+            ConsoleKeyInfo keyInfo = _console.ReadKey(intercept: true);
 
             if (keyInfo.Key == ConsoleKey.Enter)
             {
-                Console.WriteLine();
+                _console.WriteLine("");
                 return line.ToString();
             }
             else if (keyInfo.Key == ConsoleKey.UpArrow)
             {
-                // Get previous command from history
-                Pipeline? previous = PipelineHistory.GetPrevious();
+                var previous = PipelineHistory.GetPrevious();
                 if (previous != null)
                 {
-                    // Clear current line
-                    ClearCurrentLine(line.ToString(), cursorPosition);
-
-                    // Set new line from history
+                    ConsoleHelper.ClearLine(line.ToString(), cursorPosition);
                     line.Clear();
                     line.Append(previous.ToString());
                     cursorPosition = line.Length;
-                    Console.Write(line.ToString());
+                    _console.Write(line.ToString());
                 }
             }
             else if (keyInfo.Key == ConsoleKey.DownArrow)
             {
-                // Get next command from history
-                Pipeline? next = PipelineHistory.GetNext();
+                var next = PipelineHistory.GetNext();
                 if (next != null)
                 {
-                    // Clear current line
-                    ClearCurrentLine(line.ToString(), cursorPosition);
-
-                    // Set new line from history
+                    ConsoleHelper.ClearLine(line.ToString(), cursorPosition);
                     line.Clear();
                     line.Append(next.ToString());
                     cursorPosition = line.Length;
-                    Console.Write(line.ToString());
+                    _console.Write(line.ToString());
                 }
                 else
                 {
-                    // At the end of history, clear the line
-                    ClearCurrentLine(line.ToString(), cursorPosition);
+                    ConsoleHelper.ClearLine(line.ToString(), cursorPosition);
                     line.Clear();
                     cursorPosition = 0;
                 }
             }
             else if (keyInfo.Key == ConsoleKey.Tab)
             {
-                // Only autocomplete when cursor is at the end
                 if (cursorPosition == line.Length)
                 {
-                    CompletionResult result = Autocomplete.GetSuggestion(line.ToString());
+                    var result = Autocomplete.GetSuggestion(line.ToString());
                     if (result.Matches.Count > 0 && result.Matches[0] != line.ToString())
                     {
                         if (result.Matches.Count == 1)
                         {
-                            string addedPart = result.Matches[0].Substring(line.Length);
+                            string added = result.Matches[0].Substring(line.Length);
                             string suffix = result.IsComplete ? " " : "";
-                            line.Append(addedPart + suffix);
+                            line.Append(added + suffix);
                             cursorPosition = line.Length;
-                            Console.Write(addedPart + suffix);
+                            _console.Write(added + suffix);
                         }
                         else
                         {
-                            Console.Write('\x07'); // Beep sound
-                            if (Console.ReadKey(intercept: true).Key == ConsoleKey.Tab)
+                            _console.Write('\x07');
+                            if (_console.ReadKey(intercept: true).Key == ConsoleKey.Tab)
                             {
-                                Console.WriteLine();
+                                _console.WriteLine("");
                                 foreach (var cmd in result.Matches)
-                                {
-                                    Console.Write(cmd + "  ");
-                                }
-                                // Redraw the prompt and current line
-                                Console.Write("\n$ " + line.ToString());
+                                    _console.Write(cmd + "  ");
+                                _console.Write("\n$ " + line.ToString());
                             }
                         }
-
                     }
                     else
                     {
-                        Console.Write('\x07'); // Beep sound
+                        _console.Write('\x07');
                     }
                 }
             }
@@ -225,11 +218,10 @@ public class InputReader
                 {
                     line.Remove(cursorPosition - 1, 1);
                     cursorPosition--;
-
-                    // Redraw from cursor to end
-                    Console.Write("\b");
-                    Console.Write(line.ToString().Substring(cursorPosition) + " ");
-                    Console.Write(new string('\b', line.Length - cursorPosition + 1));
+                    // Redraw from cursor
+                    _console.Write("\b");
+                    _console.Write(line.ToString().Substring(cursorPosition) + " ");
+                    _console.Write(new string('\b', line.Length - cursorPosition + 1));
                 }
             }
             else if (keyInfo.Key == ConsoleKey.Delete)
@@ -237,10 +229,8 @@ public class InputReader
                 if (cursorPosition < line.Length)
                 {
                     line.Remove(cursorPosition, 1);
-
-                    // Redraw from cursor to end
-                    Console.Write(line.ToString().Substring(cursorPosition) + " ");
-                    Console.Write(new string('\b', line.Length - cursorPosition + 1));
+                    _console.Write(line.ToString().Substring(cursorPosition) + " ");
+                    _console.Write(new string('\b', line.Length - cursorPosition + 1));
                 }
             }
             else if (keyInfo.Key == ConsoleKey.LeftArrow)
@@ -248,40 +238,25 @@ public class InputReader
                 if (cursorPosition > 0)
                 {
                     cursorPosition--;
-                    Console.Write("\b");
+                    _console.Write("\b");
                 }
             }
             else if (keyInfo.Key == ConsoleKey.RightArrow)
             {
                 if (cursorPosition < line.Length)
                 {
-                    Console.Write(line[cursorPosition]);
+                    _console.Write(line[cursorPosition].ToString());
                     cursorPosition++;
                 }
             }
             else if (!char.IsControl(keyInfo.KeyChar))
             {
-                // Insert character at cursor position
                 line.Insert(cursorPosition, keyInfo.KeyChar);
                 cursorPosition++;
-
-                // Redraw from cursor to end
-                Console.Write(line.ToString().Substring(cursorPosition - 1));
-                Console.Write(new string('\b', line.Length - cursorPosition));
+                // Redraw from insertion point
+                _console.Write(line.ToString().Substring(cursorPosition - 1));
+                _console.Write(new string('\b', line.Length - cursorPosition));
             }
         }
-    }
-
-    /// <summary>
-    /// Clears the current line in the console
-    /// </summary>
-    private static void ClearCurrentLine(string currentText, int cursorPosition)
-    {
-        // Move cursor to the beginning of the line
-        Console.Write(new string('\b', cursorPosition));
-        // Overwrite the entire line with spaces
-        Console.Write(new string(' ', currentText.Length));
-        // Move cursor back to the beginning
-        Console.Write(new string('\b', currentText.Length));
     }
 }

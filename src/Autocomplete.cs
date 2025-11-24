@@ -70,7 +70,7 @@ public static class Autocomplete
     /// </summary>
     public static CompletionResult GetSuggestion(string prefix)
     {
-        var matches = _trie.GetAllMatchs(prefix).OrderBy(s => s).ToList();
+        var matches = _trie.GetAllMatches(prefix).OrderBy(s => s).ToList();
 
         if (matches.Count == 0)
         {
@@ -112,5 +112,13 @@ public static class Autocomplete
 
         // Otherwise return all matches
         return new CompletionResult { Matches = matches, IsComplete = false };
+    }
+
+    /// <summary>
+    /// Clears all registered words
+    /// </summary>
+    public static void Clear()
+    {
+        _trie.Clear();
     }
 }

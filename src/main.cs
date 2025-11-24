@@ -1,35 +1,38 @@
+using System;
+using System.IO;
+
 class Program
 {
     static void Main(string[] args)
     {
-        try
+        // For testing: add testbin directory to PATH
+        string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
+        string? currentPath = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrEmpty(currentPath))
         {
-            // For testing: add testbin directory to PATH
-            string testBinPath = Path.Combine(Directory.GetCurrentDirectory(), "testbin");
-            string? currentPath = Environment.GetEnvironmentVariable("PATH");
-            if (!string.IsNullOrEmpty(currentPath))
+            Environment.SetEnvironmentVariable("PATH", testBinPath + Path.PathSeparator + currentPath);
+        }
+        else
+        {
+            Environment.SetEnvironmentVariable("PATH", testBinPath);
+        }
+
+        PipelineHistory.LoadHistoryFromFile();
+
+        var executor = new CommandExecutor();
+        while (true)
+        {
+            Console.Write("$ ");
+
+            string? commandLine = InputReader.ReadLine();
+            if (commandLine == null)
             {
-                Environment.SetEnvironmentVariable("PATH", testBinPath + Path.PathSeparator + currentPath);
+                // EOF on redirected input — stop the shell loop
+                break;
             }
-            else
+
+            try
             {
-                Environment.SetEnvironmentVariable("PATH", testBinPath);
-            }
-
-            PipelineHistory.LoadHistoryFromFile();
-
-            var executor = new CommandExecutor();
-            while (true)
-            {
-                Console.Write("$ ");
-
-                string? commandLine = InputReader.ReadLine();
-                if (commandLine == null)
-                {
-                    // EOF on redirected input — stop the shell loop
-                    break;
-                }
-
                 Pipeline pipeline = CommandParser.ParsePipeline(commandLine);
 
                 // Execute the pipeline and check if we should continue
@@ -39,16 +42,21 @@ class Program
                     break;
                 }
             }
+            catch (CommandNotFoundException ex)
+            {
+                Console.WriteLine($"{ex.Message}");
+            }
+            catch (ExecutionException ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+            }
+        }
 
-            // Save history before exiting
-            PipelineHistory.SaveHistoryToFile();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"\nError: {ex.Message}");
-            Console.WriteLine($"Stack Trace:\n{ex.StackTrace}");
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
-        }
+        // Save history before exiting
+        PipelineHistory.SaveHistoryToFile();
     }
 }

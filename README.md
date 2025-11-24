@@ -51,13 +51,46 @@ src/
 ├── PipelineHistory.cs           # Command history management
 ├── OutputRedirector.cs          # Output redirection support
 ├── RedirectionInfo.cs           # Redirection metadata
+├── ShellException.cs            # Custom exceptions
+├── IConsole.cs                  # Console abstraction interface
+├── RealConsole.cs               # Real console implementation
+├── ConsoleHelper.cs             # Console utility methods
 └── Commands/
     ├── CdCommand.cs             # Change directory
     ├── EchoCommand.cs           # Print arguments
     ├── ExitCommand.cs           # Exit shell
     ├── PwdCommand.cs            # Print working directory
     ├── TypeCommand.cs           # Show command type/location
-    └── HistoryCommand.cs        # Display command history
+    ├── HistoryCommand.cs        # Display command history
+    └── ClearCommand.cs          # Clear console screen
+
+tests/
+├── Commands/
+│   ├── CdCommandTests.cs        # cd command tests (11 tests: tilde, parent dir, relative paths, errors)
+│   ├── ClearCommandTests.cs     # clear/cls command tests (1 test)
+│   ├── EchoCommandTests.cs      # echo command tests (3 tests)
+│   ├── ExitCommandTests.cs      # exit command tests (2 tests)
+│   ├── HistoryCommandTests.cs   # history command tests (14 tests: list, read, write, append, edge cases)
+│   ├── PwdCommandTests.cs       # pwd command tests (1 test)
+│   └── TypeCommandTests.cs      # type command tests (5 tests: builtin/external detection)
+├── Core/
+│   ├── AutocompleteTests.cs     # Tab completion tests (15 tests)
+│   ├── CommandExecutorTests.cs  # Command execution tests (19 tests)
+│   ├── CommandParserTests.cs    # Parser and pipeline tests (16 tests)
+│   ├── ConsoleHelperTests.cs    # Console helper tests (14 tests: cursor, redraw, clear)
+│   ├── HistoryPersistenceTests.cs # History file I/O tests (7 tests)
+│   ├── InputReaderTests.cs      # Input handling tests (30 tests: interactive & redirected input, arrows, tab, history)
+│   ├── ModelsTests.cs           # Data model and exception tests (12 tests)
+│   ├── OutputRedirectorTests.cs # Output redirection tests (8 tests)
+│   ├── PipelineHistoryTests.cs  # History navigation tests (14 tests)
+│   ├── RealConsoleTests.cs      # Real console wrapper tests (8 tests)
+│   └── TrieTests.cs             # Trie data structure tests (13 tests)
+├── Integration/
+│   └── IntegrationTests.cs      # End-to-end pipeline tests (20 tests)
+├── Mocks/
+│   └── MockConsole.cs           # Console mock for testing (redirected & interactive modes)
+├── xunit.runner.json            # xUnit configuration (serial execution)
+└── CodecraftersShell.Tests.csproj
 ```
 
 ### Key Components
@@ -107,6 +140,53 @@ dotnet build --configuration Release --output ./bin/dist codecrafters-shell.cspr
 ```bash
 dotnet run
 ```
+
+### Test
+
+```bash
+# Run all tests
+dotnet test tests/CodecraftersShell.Tests.csproj
+
+# Run specific test category
+dotnet test --filter "FullyQualifiedName~Commands"     # Command tests
+dotnet test --filter "FullyQualifiedName~Core"         # Core functionality tests
+dotnet test --filter "FullyQualifiedName~Integration"  # Integration tests
+
+# Run with detailed output
+dotnet test --verbosity normal
+```
+
+The test suite includes:
+
+- **182 comprehensive unit tests** covering all components
+- **Commands tests** (36 tests): Individual test files for each builtin command
+  - CdCommand (11 tests): Tilde expansion, parent directory (..), relative/absolute paths, error handling
+  - HistoryCommand (13 tests): List, limit, read/write/append to file, empty history, edge cases
+  - EchoCommand (3 tests), PwdCommand (1 test), ExitCommand (2 tests), TypeCommand (5 tests), ClearCommand (1 test)
+- **Core tests** (144 tests): Parser, executor, autocomplete, history, I/O, console utilities
+  - InputReader (27 tests): Interactive mode, redirected mode, arrows, tab completion, history navigation
+  - CommandParser (26 tests): Pipelines, quotes, arguments, edge cases, redirection
+  - CommandExecutor (19 tests): Builtin commands, external commands, PATH resolution, pipelines
+  - ConsoleHelper (12 tests): Cursor movement, line clearing, text redrawing
+  - ModelsTests (12 tests): Data structures, exceptions, command/pipeline models
+  - HistoryPersistenceTests (11 tests): File I/O, save/load, tilde expansion
+  - PipelineHistoryTests (8 tests): Navigation, add/clear operations
+  - RealConsole (8 tests): Console wrapper implementation
+  - OutputRedirectorTests (6 tests): Stdout/stderr redirection
+  - AutocompleteTests (6 tests): Trie-based prefix matching
+  - TrieTests (9 tests): Trie data structure operations
+- **Integration tests** (2 tests): End-to-end pipeline and redirection scenarios
+- **Mock infrastructure**: Console abstraction with support for both interactive and redirected input modes
+
+### Test Coverage
+
+Key coverage metrics:
+
+- **InputReader**: 56% → Comprehensive tests for both interactive and redirected input paths
+- **CommandExecutor**: 47% → Extended tests for PATH resolution, redirection, pipeline execution
+- **ConsoleHelper**: Tests for all utility methods (cursor, clear, redraw)
+- **RealConsole**: Complete test coverage for console wrapper
+- All builtin commands fully tested with edge cases and error conditions
 
 ### Set History File (Optional)
 
@@ -175,24 +255,7 @@ myapp  mytest  mytool    # Shows all matches starting with "my"
 
 ### Adding New Builtin Commands
 
-1. Create a new class in `src/Commands/` implementing `ICommand`
-2. Add `[CommandName("yourcommand")]` attribute
-3. Implement `Execute(IReadOnlyList<string> args)` method
-4. Return `true` to continue shell, `false` to exit
-
-Example:
-
-```csharp
-[CommandName("hello")]
-public class HelloCommand : ICommand
-{
-    public bool Execute(IReadOnlyList<string> args)
-    {
-        Console.WriteLine("Hello, Shell!");
-        return true;
-    }
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for a detailed guide on adding new commands and understanding the codebase.
 
 ### Pipeline Execution Flow
 
