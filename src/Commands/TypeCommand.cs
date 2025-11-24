@@ -11,7 +11,7 @@ public class TypeCommand : ICommand
 
         string commandName = args[0];
 
-        if (CommandExecutor.IsCommand(commandName))
+        if (CommandExecutor.IsBuiltInCommand(commandName))
         {
             Console.WriteLine($"{commandName} is a shell builtin");
         }

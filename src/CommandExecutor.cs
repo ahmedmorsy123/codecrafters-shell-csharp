@@ -16,6 +16,12 @@ public class CommandExecutor
     /// </summary>
     private void RegisterCommands()
     {
+        // Skip if commands are already registered (for tests that create multiple instances)
+        if (_commands.Count > 0)
+        {
+            return;
+        }
+
         // Get all types in the current assembly
         var commandTypes = typeof(CommandExecutor).Assembly.GetTypes()
             .Where(type => typeof(ICommand).IsAssignableFrom(type)
@@ -40,12 +46,6 @@ public class CommandExecutor
             // Register each command name from the attributes
             foreach (var attribute in attributes)
             {
-                if (_commands.ContainsKey(attribute.Name))
-                {
-                    Console.WriteLine($"Warning: Duplicate command name '{attribute.Name}' ignored for {commandType.Name}");
-                    continue;
-                }
-
                 _commands[attribute.Name] = commandInstance;
                 Autocomplete.Register(attribute.Name); // Register in Autocomplete
             }
@@ -57,7 +57,7 @@ public class CommandExecutor
     /// </summary>
     /// <param name="commandName">The command name to check</param>
     /// <returns>True if the command is registered, false otherwise</returns>
-    public static bool IsCommand(string commandName)
+    public static bool IsBuiltInCommand(string commandName)
     {
         return _commands.ContainsKey(commandName);
     }
@@ -140,7 +140,7 @@ public class CommandExecutor
                 if (_commands.ContainsKey(cmd.CommandName))
                 {
                     // Execute builtin and capture output
-                    var result = ExecuteBuiltinInPipeline(cmd, isFirst, isLast);
+                    var result = ExecuteBuiltinInPipeline(cmd, isFirst, isLast, builtinOutput);
                     if (!result.success)
                     {
                         return false; // Exit command
@@ -221,13 +221,21 @@ public class CommandExecutor
     /// <summary>
     /// Executes a builtin command as part of a pipeline
     /// </summary>
-    private (bool success, string output) ExecuteBuiltinInPipeline(Command cmd, bool isFirst, bool isLast)
+    private (bool success, string output) ExecuteBuiltinInPipeline(Command cmd, bool isFirst, bool isLast, string? input = null)
     {
         // Capture output of builtin command
         using (var writer = new StringWriter())
         {
             var originalOut = Console.Out;
+            var originalIn = Console.In;
+
             Console.SetOut(writer);
+
+            // If there's input from previous command, redirect Console.In
+            if (input != null)
+            {
+                Console.SetIn(new StringReader(input));
+            }
 
             try
             {
@@ -237,6 +245,7 @@ public class CommandExecutor
                     if (cmd.CommandName.Equals("exit", StringComparison.OrdinalIgnoreCase))
                     {
                         Console.SetOut(originalOut);
+                        Console.SetIn(originalIn);
                         return (false, string.Empty); // Signal to exit the shell
                     }
 
@@ -246,6 +255,7 @@ public class CommandExecutor
             finally
             {
                 Console.SetOut(originalOut);
+                Console.SetIn(originalIn);
             }
 
             return (true, writer.ToString());

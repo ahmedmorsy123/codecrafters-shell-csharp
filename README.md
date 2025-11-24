@@ -7,7 +7,12 @@ A POSIX-compliant shell built in C# with support for builtin commands, external 
 ### Core Functionality
 
 - **Interactive REPL**: Command prompt with real-time input handling
-- **Builtin Commands**: `cd`, `pwd`, `echo`, `type`, `exit`, `history`
+- **Builtin Commands**: 18 commands implemented
+  - **File Operations**: `cat`, `pwd`, `cd`, `type`, `which`
+  - **Output**: `echo`, `date`, `env`, `whoami`, `clear`/`cls`
+  - **Control Flow**: `true`, `false`, `sleep`, `exit`
+  - **History**: `history` with persistent storage
+  - **Aliases**: `alias`, `unalias` for command shortcuts
 - **External Commands**: Execute any program available in PATH
 - **Command Parsing**: Handles quoted arguments and special characters
 
@@ -55,6 +60,7 @@ src/
 ├── IConsole.cs                  # Console abstraction interface
 ├── RealConsole.cs               # Real console implementation
 ├── ConsoleHelper.cs             # Console utility methods
+├── AliasManager.cs              # Command alias management
 └── Commands/
     ├── CdCommand.cs             # Change directory
     ├── EchoCommand.cs           # Print arguments
@@ -62,7 +68,17 @@ src/
     ├── PwdCommand.cs            # Print working directory
     ├── TypeCommand.cs           # Show command type/location
     ├── HistoryCommand.cs        # Display command history
-    └── ClearCommand.cs          # Clear console screen
+    ├── ClearCommand.cs          # Clear console screen
+    ├── CatCommand.cs            # Concatenate and display files
+    ├── EnvCommand.cs            # Display environment variables
+    ├── DateCommand.cs           # Display date/time with formatting
+    ├── WhoamiCommand.cs         # Display current username
+    ├── WhichCommand.cs          # Locate commands in PATH
+    ├── TrueCommand.cs           # Always succeed (exit code 0)
+    ├── FalseCommand.cs          # Always fail (exit code 1)
+    ├── SleepCommand.cs          # Delay execution
+    ├── AliasCommand.cs          # Create command aliases
+    └── UnaliasCommand.cs        # Remove command aliases
 
 tests/
 ├── Commands/
@@ -72,7 +88,17 @@ tests/
 │   ├── ExitCommandTests.cs      # exit command tests (2 tests)
 │   ├── HistoryCommandTests.cs   # history command tests (14 tests: list, read, write, append, edge cases)
 │   ├── PwdCommandTests.cs       # pwd command tests (1 test)
-│   └── TypeCommandTests.cs      # type command tests (5 tests: builtin/external detection)
+│   ├── TypeCommandTests.cs      # type command tests (5 tests: builtin/external detection)
+│   ├── CatCommandTests.cs       # cat command tests (14 tests: files, stdin, errors, concatenation)
+│   ├── EnvCommandTests.cs       # env command tests (9 tests: all vars, specific vars, case-insensitive)
+│   ├── DateCommandTests.cs      # date command tests (15 tests: default, format specifiers, escaping)
+│   ├── WhoamiCommandTests.cs    # whoami command tests (5 tests: username display, cross-platform)
+│   ├── WhichCommandTests.cs     # which command tests (10 tests: builtins, PATH search, Windows extensions)
+│   ├── TrueCommandTests.cs      # true command tests (5 tests: always succeeds)
+│   ├── FalseCommandTests.cs     # false command tests (5 tests: always fails)
+│   ├── SleepCommandTests.cs     # sleep command tests (10 tests: timing, validation, limits)
+│   ├── AliasCommandTests.cs     # alias command tests (14 tests: create, list, display)
+│   └── UnaliasCommandTests.cs   # unalias command tests (12 tests: remove, -a flag, errors)
 ├── Core/
 │   ├── AutocompleteTests.cs     # Tab completion tests (15 tests)
 │   ├── CommandExecutorTests.cs  # Command execution tests (19 tests)
@@ -158,11 +184,23 @@ dotnet test --verbosity normal
 
 The test suite includes:
 
-- **182 comprehensive unit tests** covering all components
-- **Commands tests** (36 tests): Individual test files for each builtin command
-  - CdCommand (11 tests): Tilde expansion, parent directory (..), relative/absolute paths, error handling
-  - HistoryCommand (13 tests): List, limit, read/write/append to file, empty history, edge cases
-  - EchoCommand (3 tests), PwdCommand (1 test), ExitCommand (2 tests), TypeCommand (5 tests), ClearCommand (1 test)
+- **281 comprehensive unit tests** covering all components
+- **Commands tests** (135 tests): Individual test files for each of the 18 builtin commands
+  - **Original commands** (37 tests):
+    - CdCommand (11 tests): Tilde expansion, parent directory (..), relative/absolute paths, error handling
+    - HistoryCommand (14 tests): List, limit, read/write/append to file, empty history, edge cases
+    - EchoCommand (3 tests), PwdCommand (1 test), ExitCommand (2 tests), TypeCommand (5 tests), ClearCommand (1 test)
+  - **New commands** (99 tests):
+    - CatCommand (14 tests): File reading, stdin support for pipelines, multiple files, error handling
+    - DateCommand (15 tests): Default format, custom format specifiers (%Y, %m, %d, etc.), %% escaping
+    - AliasCommand (14 tests): Create/update aliases, list all, display specific, multiple definitions
+    - UnaliasCommand (12 tests): Remove aliases, -a flag for all, error messages, validation
+    - EnvCommand (9 tests): Display all vars, specific vars, case-insensitive matching, empty values
+    - WhichCommand (10 tests): Builtin detection, PATH search, Windows .exe/.bat extensions
+    - SleepCommand (10 tests): Valid delays, zero sleep, error handling, 1-hour maximum limit
+    - WhoamiCommand (5 tests): Username display, cross-platform (USERNAME/USER), error fallback
+    - TrueCommand (5 tests): Always returns success, ignores arguments
+    - FalseCommand (5 tests): Sets exit code 1, continues shell execution
 - **Core tests** (144 tests): Parser, executor, autocomplete, history, I/O, console utilities
   - InputReader (27 tests): Interactive mode, redirected mode, arrows, tab completion, history navigation
   - CommandParser (26 tests): Pipelines, quotes, arguments, edge cases, redirection
@@ -241,6 +279,61 @@ $ history 2
 # Navigate with Up/Down arrows to recall previous commands
 ```
 
+### New Commands
+
+```bash
+# Environment variables
+$ env
+PATH=/usr/bin:/bin
+HOME=/home/user
+...
+
+$ env PATH
+PATH=/usr/bin:/bin
+
+# Date and time
+$ date
+Mon Nov 24 15:30:45 2025
+
+$ date +%Y-%m-%d
+2025-11-24
+
+# File operations
+$ cat file.txt
+Contents of file.txt
+
+$ echo "line 1" | cat
+line 1
+
+# Command location
+$ which echo
+echo is a shell builtin
+
+$ which python
+/usr/bin/python
+
+# Aliases
+$ alias ll='ls -la'
+$ alias
+alias ll='ls -la'
+
+$ unalias ll
+$ unalias -a  # Remove all aliases
+
+# User info
+$ whoami
+john_doe
+
+# Utility commands
+$ true && echo "success"
+success
+
+$ false || echo "failed"
+failed
+
+$ sleep 2  # Pauses for 2 seconds
+```
+
 ### Tab Completion
 
 ```bash
@@ -283,15 +376,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for a detailed guide on adding new comman
 - No input redirection (`<`)
 - No append redirection (`>>`)
 - No globbing (`*`, `?`)
+- Aliases are not expanded in command execution (stored but not yet used)
 
 ## Future Enhancements
 
-- Command aliases
-- Shell scripting support
+- Alias expansion in command execution
+- Shell scripting support (.sh file execution)
 - Job control (fg, bg, jobs)
 - More sophisticated globbing
 - Brace expansion
 - Command substitution
+- Environment variable expansion in commands
 
 ## License
 

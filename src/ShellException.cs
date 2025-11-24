@@ -16,7 +16,7 @@ public class ShellException : Exception
 public class CommandNotFoundException : ShellException
 {
     public CommandNotFoundException(string commandName)
-        : base($"Command '{commandName}' not found.") { }
+        : base($"{commandName}: Command not found.") { }
 }
 
 /// <summary>

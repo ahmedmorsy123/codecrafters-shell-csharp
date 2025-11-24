@@ -99,17 +99,17 @@ public class CommandExecutorTests : IDisposable
     [Fact]
     public void IsCommand_WithBuiltin_ReturnsTrue()
     {
-        Assert.True(CommandExecutor.IsCommand("echo"));
-        Assert.True(CommandExecutor.IsCommand("ECHO")); // Case insensitive
-        Assert.True(CommandExecutor.IsCommand("pwd"));
-        Assert.True(CommandExecutor.IsCommand("cd"));
+        Assert.True(CommandExecutor.IsBuiltInCommand("echo"));
+        Assert.True(CommandExecutor.IsBuiltInCommand("ECHO")); // Case insensitive
+        Assert.True(CommandExecutor.IsBuiltInCommand("pwd"));
+        Assert.True(CommandExecutor.IsBuiltInCommand("cd"));
     }
 
     [Fact]
     public void IsCommand_WithNonBuiltin_ReturnsFalse()
     {
-        Assert.False(CommandExecutor.IsCommand("nonexistent"));
-        Assert.False(CommandExecutor.IsCommand(""));
+        Assert.False(CommandExecutor.IsBuiltInCommand("nonexistent"));
+        Assert.False(CommandExecutor.IsBuiltInCommand(""));
     }
 
     [Fact]
